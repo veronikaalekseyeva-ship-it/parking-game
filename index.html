@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Дай проехать!</title>
+<style>
+/* ============================================================
+   ДАЙ ПРОЕХАТЬ! — визуал "стекло на светлом" (Apple/Fluent):
+   белая основа, деликатное цветное свечение, стеклянная доска,
+   плотная сетка, фишки в лунках, алая целевая.
+   ============================================================ */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:-apple-system,'SF Pro Display','Segoe UI',system-ui,Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100dvh;overflow:hidden;position:relative;color:#1D1D1F;background:#F8F9FB;
+}
+button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+
+/* ---------- ЖИВОЙ ФОН ----------
+   Светлая основа + два слоя для смены гаммы района +
+   медленно плывущие цветные свечения. */
+.bglayer{position:fixed;inset:0;z-index:0;transition:opacity 2.2s ease}
+#bg1{opacity:1}
+#bg2{opacity:0}
+.glow{position:fixed;z-index:0;border-radius:50%;filter:blur(52px);opacity:.5;pointer-events:none;transition:background 2.2s ease}
+.g1{width:58vmax;height:58vmax;left:-18vmax;top:-24vmax;animation:float1 36s ease-in-out infinite}
+.g2{width:50vmax;height:50vmax;right:-16vmax;top:6vmax;animation:float2 43s ease-in-out infinite}
+.g3{width:62vmax;height:62vmax;right:-20vmax;bottom:-26vmax;animation:float3 49s ease-in-out infinite}
+@keyframes float1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(7vmax,5vmax) scale(1.1)}}
+@keyframes float2{0%,100%{transform:translate(0,0) scale(1.04)}50%{transform:translate(-6vmax,7vmax) scale(.95)}}
+@keyframes float3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-8vmax,-6vmax) scale(1.08)}}
+
+/* заставка смены района */
+#district-veil{
+  position:fixed;inset:0;z-index:40;pointer-events:none;opacity:0;transition:opacity .55s ease;
+  background:radial-gradient(75% 55% at 50% 45%, rgba(255,255,255,.98), rgba(250,251,253,.88) 55%, rgba(244,246,250,.55));
+}
+#district-veil.on{opacity:1}
+#district-veil .dv-text{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.92);
+  font-size:17px;font-weight:600;color:#8A90A0;letter-spacing:.1em;text-transform:uppercase;
+  opacity:0;transition:opacity .5s ease,transform .5s ease;white-space:nowrap;
+}
+#district-veil.on .dv-text{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+/* ---------- ЗАСТАВКА ---------- */
+#splash{
+  position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:26px;padding:24px;
+  background:#F8F9FB;   /* свой непрозрачный фон — поле не просвечивает */
+  transition:opacity .55s ease, visibility .55s;
+}
+#splash::before{content:'';position:absolute;inset:-20%;
+  background:radial-gradient(38% 30% at 18% 12%,rgba(120,170,255,.30),transparent 62%),
+             radial-gradient(35% 28% at 88% 20%,rgba(255,140,180,.22),transparent 62%),
+             radial-gradient(45% 35% at 80% 92%,rgba(120,230,200,.26),transparent 62%);
+  filter:blur(10px)}
+#splash>*{position:relative}
+#splash.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.splash-title{
+  font-size:clamp(40px,12vw,62px);font-weight:700;letter-spacing:-.03em;text-align:center;
+  color:#1D1D1F;line-height:1.04;
+}
+.splash-title em{font-style:normal;color:#D6336C}
+.splash-sub{font-size:14px;color:#8A90A0;margin-top:-14px;text-align:center}
+.splash-cars{display:flex;gap:8px;margin:4px 0 2px}
+.splash-cars i{display:block;height:16px;border-radius:6px;box-shadow:0 3px 8px rgba(45,55,85,.18), inset 0 1.5px 1.5px rgba(255,255,255,.6)}
+.btn-play{
+  height:56px;padding:0 48px;border-radius:18px;font-size:17px;font-weight:600;color:#fff;
+  background:#D6336C;
+  box-shadow:0 8px 24px rgba(214,51,108,.34), inset 0 1px 1px rgba(255,255,255,.3);
+  transition:transform .16s;animation:breathe 2.6s ease-in-out infinite;
+}
+.btn-play:active{transform:scale(.96)}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+
+/* ---------- ИГРОВОЙ ЭКРАН ---------- */
+.stage{
+  position:relative;z-index:1;min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:20px;max-width:430px;margin:0 auto;
+}
+.head{width:100%;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
+.lvl{font-size:29px;font-weight:600;letter-spacing:-.028em;line-height:1.1;color:#1D1D1F}
+.lvl small{display:block;font-size:13px;font-weight:400;margin-top:5px;color:#787D88}
+.lvl small b{color:#1D1D1F;font-weight:600}
+.head-right{display:flex;align-items:center;gap:9px}
+.starbank{
+  display:flex;align-items:center;gap:5px;font-size:14px;font-weight:600;color:#1D1D1F;
+  background:rgba(255,255,255,.75);padding:8px 13px;border-radius:100px;
+  box-shadow:0 1px 3px rgba(60,70,90,.10);backdrop-filter:blur(12px);
+}
+.starbank.bump{animation:bump .5s cubic-bezier(.2,.8,.3,1.5)}
+@keyframes bump{40%{transform:scale(1.2)}}
+.gear{
+  width:40px;height:40px;border-radius:100px;background:rgba(255,255,255,.75);
+  display:flex;align-items:center;justify-content:center;color:#4A4F5A;
+  box-shadow:0 1px 3px rgba(60,70,90,.10);backdrop-filter:blur(12px);transition:transform .15s;
+}
+.gear:active{transform:scale(.94)}
+
+/* доска: матовое стекло */
+.island{
+  position:relative;width:100%;border-radius:26px;padding:11px;
+  background:rgba(255,255,255,.62);backdrop-filter:blur(20px);
+  box-shadow:0 8px 32px rgba(60,70,100,.10), inset 0 1px 1px rgba(255,255,255,.9);
+}
+.board{position:relative;width:100%;aspect-ratio:1;touch-action:none}
+/* лунки: деликатные, плотная сетка */
+.cell{position:absolute;border-radius:9px;background:rgba(230,236,245,.55);box-shadow:inset 0 1.5px 2.5px rgba(105,120,155,.12)}
+.cell.exit{background:rgba(214,51,108,.12);box-shadow:inset 0 1.5px 2.5px rgba(150,35,80,.15)}
+.exit-mark{position:absolute;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:opacity .3s}
+.exit-mark.hot{animation:exitPulse 1.4s ease-in-out infinite}
+@keyframes exitPulse{0%,100%{opacity:.55;transform:translateX(0)}50%{opacity:1;transform:translateX(3px)}}
+
+/* фишки: лежат в лунках (чуть уже клетки), объёмные */
+.car{
+  position:absolute;border-radius:9px;cursor:grab;will-change:transform;
+  box-shadow:var(--face), 0 6px 15px rgba(45,55,85,.22), 0 2px 4px rgba(45,55,85,.13);
+  transition:box-shadow .16s ease, filter .3s ease;
+  --face:inset 0 2px 2px rgba(255,255,255,.6), inset 0 -2px 3px rgba(80,95,130,.14);
+}
+.car.lift{box-shadow:var(--face), 0 13px 24px rgba(45,55,85,.30), 0 4px 8px rgba(45,55,85,.16);z-index:5;cursor:grabbing}
+.car.settle{animation:settle .28s cubic-bezier(.2,.9,.3,1.4)}
+@keyframes settle{40%{filter:brightness(1.08)}}
+.car.hero{
+  background:linear-gradient(180deg,#E85A8A,#C92A5E);
+  --face:inset 0 2px 2px rgba(255,255,255,.45), inset 0 -2px 3px rgba(110,15,50,.3);
+  box-shadow:var(--face), 0 8px 19px rgba(214,51,108,.4), 0 2px 5px rgba(120,20,55,.3);
+}
+.car.hero.lift{box-shadow:var(--face), 0 14px 26px rgba(214,51,108,.46), 0 4px 8px rgba(120,20,55,.32)}
+.car.hero.ready{animation:heroReady 1.5s ease-in-out infinite}
+@keyframes heroReady{0%,100%{box-shadow:var(--face), 0 8px 19px rgba(214,51,108,.4), 0 0 18px 2px rgba(220,60,120,.32)}50%{box-shadow:var(--face), 0 8px 21px rgba(255,77,46,.46), 0 0 30px 7px rgba(230,90,140,.55)}}
+.car.hint-flash{animation:hintPulse .9s ease 3}
+@keyframes hintPulse{50%{filter:brightness(1.18) saturate(1.2)}}
+
+/* кнопки */
+.btns{width:100%;display:flex;gap:11px;margin-top:18px}
+.btn{
+  height:50px;border-radius:15px;font-size:15px;font-weight:500;letter-spacing:-.01em;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:rgba(255,255,255,.72);color:#1E2129;
+  box-shadow:0 1px 3px rgba(60,70,90,.10);backdrop-filter:blur(12px);
+  transition:transform .15s, opacity .2s;
+}
+.btn:active{transform:scale(.97)}
+.btn.ic{width:50px;flex:none}
+.btn.flex{flex:1}
+.btn.accent{background:#D6336C;color:#fff;box-shadow:0 4px 14px rgba(214,51,108,.32)}
+.btn:disabled{opacity:.4}
+
+/* обучение */
+#tut{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 14px);
+  background:rgba(22,24,29,.9);color:#fff;font-size:13px;font-weight:500;padding:10px 16px;border-radius:12px;
+  white-space:nowrap;box-shadow:0 6px 20px rgba(20,25,40,.25);opacity:0;transition:opacity .4s;pointer-events:none;z-index:6;
+  backdrop-filter:blur(8px);
+}
+#tut.on{opacity:1;animation:tutBob 2.2s ease-in-out infinite}
+@keyframes tutBob{50%{transform:translateX(-50%) translateY(-4px)}}
+#tut::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:rgba(22,24,29,.9)}
+
+/* ---------- ПРАЗДНИК ---------- */
+#confetti{position:fixed;inset:0;z-index:25;pointer-events:none;overflow:hidden}
+.conf{position:absolute;top:-20px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(112vh) rotate(var(--spin))}}
+
+.veil{
+  position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;
+  background:rgba(30,35,50,.28);padding:16px;backdrop-filter:blur(6px);
+}
+.veil.on{display:flex}
+.sheet{
+  width:100%;max-width:390px;border-radius:24px;padding:28px 24px;text-align:center;
+  background:rgba(255,255,255,.9);backdrop-filter:blur(24px);
+  box-shadow:0 16px 48px rgba(40,50,80,.24), inset 0 1px 1px rgba(255,255,255,1);
+  animation:pop-in .38s cubic-bezier(.2,.9,.3,1.3);
+}
+@keyframes pop-in{from{transform:scale(.86);opacity:0}to{transform:none;opacity:1}}
+.rays{position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+  background:conic-gradient(from 0deg at 50% 50%,
+    rgba(214,51,108,.13) 0deg, transparent 14deg, transparent 26deg,
+    rgba(150,190,255,.16) 40deg, transparent 54deg, transparent 66deg,
+    rgba(214,51,108,.13) 80deg, transparent 94deg, transparent 106deg,
+    rgba(150,190,255,.16) 120deg, transparent 134deg, transparent 146deg,
+    rgba(214,51,108,.13) 160deg, transparent 174deg, transparent 186deg,
+    rgba(150,190,255,.16) 200deg, transparent 214deg, transparent 226deg,
+    rgba(214,51,108,.13) 240deg, transparent 254deg, transparent 266deg,
+    rgba(150,190,255,.16) 280deg, transparent 294deg, transparent 306deg,
+    rgba(214,51,108,.13) 320deg, transparent 334deg, transparent 346deg);
+  animation:spin 26s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.win-title{font-size:27px;font-weight:700;color:#1D1D1F;letter-spacing:-.02em}
+.win-sub{font-size:13.5px;color:#8A90A0;margin-top:4px}
+.win-stars{display:flex;justify-content:center;gap:12px;margin:18px 0 10px}
+.win-stars svg{width:44px;height:44px;opacity:0;transform:scale(.3) rotate(-25deg)}
+.win-stars svg.show{animation:starPop .5s cubic-bezier(.2,.9,.3,1.7) forwards}
+@keyframes starPop{to{opacity:1;transform:none}}
+.win-info{font-size:13.5px;color:#787D88;margin-bottom:20px;line-height:1.55}
+.win-info b{color:#1D1D1F;font-weight:600}
+.badge-new{
+  display:inline-block;background:#D6336C;color:#fff;
+  font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;margin-top:8px;
+  animation:pop-in .4s cubic-bezier(.2,.9,.3,1.5) both .5s;
+}
+.sheet .row{display:flex;gap:10px}
+.sheet .row .btn{flex:1}
+
+/* достижение */
+#ach{
+  position:fixed;left:50%;top:22px;transform:translateX(-50%) translateY(-140%);
+  z-index:45;display:flex;align-items:center;gap:11px;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(20px);
+  padding:12px 18px 12px 14px;border-radius:18px;
+  box-shadow:0 10px 32px rgba(40,50,80,.22), inset 0 1px 1px rgba(255,255,255,1);
+  transition:transform .5s cubic-bezier(.2,.9,.3,1.3);max-width:92vw;
+}
+#ach.on{transform:translateX(-50%) translateY(0)}
+#ach .ic{width:36px;height:36px;border-radius:12px;background:#D6336C;display:flex;align-items:center;justify-content:center;flex:none}
+#ach .t1{font-size:11px;color:#9AA0AC;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+#ach .t2{font-size:14px;color:#1D1D1F;font-weight:600}
+
+/* настройки */
+.set-title{font-size:20px;font-weight:700;margin-bottom:10px;color:#1D1D1F;letter-spacing:-.02em}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:.5px solid rgba(120,130,155,.16);font-size:14px}
+.set-row:last-of-type{border-bottom:none}
+input[type=range]{flex:1;max-width:170px;accent-color:#D6336C}
+.tgl{width:50px;height:29px;border-radius:15px;background:#D6DAE2;position:relative;transition:background .18s;flex:none}
+.tgl::after{content:'';position:absolute;top:3px;left:3px;width:23px;height:23px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .18s}
+.tgl.on{background:#D6336C}
+.tgl.on::after{transform:translateX(21px)}
+.set-stats{font-size:12.5px;color:#8A90A0;margin:14px 0 4px;line-height:1.65}
+.set-stats b{color:#1D1D1F;font-weight:600}
+.ach-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:.5px solid rgba(120,130,155,.14)}
+.ach-row:last-child{border-bottom:none}
+.ach-row .dot{width:34px;height:34px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center}
+.ach-row.done .dot{background:#D6336C}
+.ach-row.lock .dot{background:#E4E7EE}
+.ach-row .name{font-size:14px;color:#1D1D1F;font-weight:500}
+.ach-row.lock .name{color:#9AA0AC;font-weight:400}
+
+.final-big{font-size:46px;margin:8px 0 0}
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(90px);
+  background:rgba(22,24,29,.92);color:#fff;font-size:13px;padding:11px 18px;border-radius:12px;
+  transition:transform .3s cubic-bezier(.2,.8,.3,1);z-index:50;pointer-events:none;white-space:nowrap;
+  backdrop-filter:blur(8px);
+}
+.toast.on{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ===================== VK BRIDGE =====================
+     Кусок 1: официальная библиотека VK Bridge (создаёт window.vkBridge).
+     Кусок 2: сразу шлём VKWebAppInit — документация требует сделать это
+     в самом начале. Вне ВК (у тебя на компьютере) vkBridge не появится
+     и игра тихо работает локально. -->
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<script>
+  if (window.vkBridge) {
+    vkBridge.send('VKWebAppInit', {}).catch(function(){ /* вне ВК */ });
+  }
+</script>
+
+<!-- живой фон: два слоя гаммы + плывущие световые пятна -->
+<div class="bglayer" id="bg1"></div>
+<div class="bglayer" id="bg2"></div>
+<div class="glow g1" id="glow1"></div>
+<div class="glow g2" id="glow2"></div>
+<div class="glow g3" id="glow3"></div>
+
+<div id="district-veil"><div class="dv-text" id="dv-text"></div></div>
+<div id="confetti"></div>
+
+<!-- фоновая музыка: файл music.mp3 лежит РЯДОМ с index.html -->
+<audio id="bgm" src="music.mp3" loop preload="auto"></audio>
+
+<!-- ===================== ЗАСТАВКА ===================== -->
+<div id="splash">
+  <div class="splash-cars">
+    <i style="width:34px;background:#A6C8E8"></i>
+    <i style="width:52px;background:linear-gradient(180deg,#E85A8A,#C92A5E)"></i>
+    <i style="width:34px;background:#BFB2E0"></i>
+  </div>
+  <div>
+    <div class="splash-title">Дай<br>проехать<em>!</em></div>
+  </div>
+  <div class="splash-sub">Классика двора</div>
+  <button class="btn-play" id="btn-play">Играть</button>
+</div>
+
+<!-- ===================== ИГРА ===================== -->
+<main class="stage">
+  <div class="head">
+    <div class="lvl"><span id="g-lv">Уровень 1</span><small>Ходов <b id="g-moves">0</b> · цель <b id="g-par">?</b><span id="g-best-wrap" style="display:none"> · рекорд <b id="g-best"></b></span></small></div>
+    <div class="head-right">
+      <span class="stars" id="g-stars" style="display:none"></span><div class="starbank" id="starbank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#DEA96E" stroke="#DEA96E" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2l2.9 6.26 6.6.7-4.95 4.5 1.4 6.54L12 16.7 6.05 20l1.4-6.54L2.5 8.96l6.6-.7z"/></svg>
+        <span id="starbank-n">0</span>
+      </div>
+      <button class="gear" id="btn-settings" aria-label="Настройки">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="island">
+    <div class="board" id="board">
+      <div id="tut">Выведи коралловую машину к выходу</div>
+    </div>
+  </div>
+
+  <div class="btns">
+    <button class="btn ic" id="btn-undo" aria-label="Отменить ход">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
+    </button>
+    <button class="btn flex" id="btn-restart">Заново</button>
+    <button class="btn flex accent" id="btn-hint">Подсказка</button>
+  </div>
+</main>
+
+<!-- ===================== ПОБЕДА ===================== -->
+<div class="veil" id="win-veil">
+  <div class="sheet" style="position:relative;overflow:hidden">
+    <div class="rays"></div>
+    <div class="win-title" id="win-title">Отлично!</div>
+    <div class="win-sub" id="win-sub"></div>
+    <div class="win-stars" id="win-stars"></div>
+    <div class="win-info" id="win-info"></div>
+    <div class="row">
+      <button class="btn" id="win-replay">Ещё раз</button>
+      <button class="btn accent" id="win-next">Дальше</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== НАСТРОЙКИ ===================== -->
+<div class="veil" id="set-veil">
+  <div class="sheet" style="text-align:left">
+    <div class="set-title">Настройки</div>
+    <div class="set-row">
+      <span>Музыка</span>
+      <input type="range" id="set-vol" min="0" max="100" step="1">
+    </div>
+    <div class="set-row">
+      <span>Звуковые эффекты</span>
+      <button class="tgl" id="set-sfx" aria-label="Эффекты"></button>
+    </div>
+    <div class="set-stats" id="set-stats"></div>
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+      <button class="btn" id="btn-ach-list" style="width:100%">Достижения</button>
+      <button class="btn" id="set-close" style="width:100%">Готово</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== ДОСТИЖЕНИЯ ===================== -->
+<div class="veil" id="ach-veil">
+  <div class="sheet" style="text-align:left;max-height:80dvh;overflow-y:auto">
+    <div class="set-title">Достижения</div>
+    <div id="ach-list"></div>
+    <div style="margin-top:14px">
+      <button class="btn" id="ach-close" style="width:100%">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== ФИНАЛ ===================== -->
+<div class="veil" id="final-veil">
+  <div class="sheet" style="position:relative;overflow:hidden">
+    <div class="rays"></div>
+    <div class="win-title">Город свободен!</div>
+    <div class="final-big">🎉</div>
+    <div class="win-info" id="final-stars" style="margin-top:12px"></div>
+    <div class="win-sub">Все машины выехали. Новые районы уже строятся — загляни позже.</div>
+  </div>
+</div>
+
+<!-- достижение -->
+<div id="ach">
+  <div class="ic">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.26 6.6.7-4.95 4.5 1.4 6.54L12 16.7 6.05 20l1.4-6.54L2.5 8.96l6.6-.7z"/></svg>
+  </div>
+  <div>
+    <div class="t1">Достижение</div>
+    <div class="t2" id="ach-text"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ============================================================
+   ДАЙ ПРОЕХАТЬ! — логика игры
+   Разделы: уровни -> районы и фон -> сохранения -> звук ->
+   поле -> перетаскивание -> победа и праздник -> достижения -> подсказка
+   ============================================================ */
+
+/* ---------- УРОВНИ ----------
+   100 уровней строкой: "цель:машины;...". Машина = 4 символа
+   x y длина направление(h/v). Первая машина — коралловая целевая. */
+const LEVELS_RAW =
+  '2:022h042v242h442v512v;3:222h513v152h452h402v;4:222h133v242h423v203h353h;5:022h142v432h442h252h452h412v012h203'+
+  'v;6:022h132h452h012h442h152h403v042v;7:122h422v132v343h012h452h032v402v232v302v053h502v;8:022h152h452h243h412h'+
+  '202h102v322v042v002v032h523v422v222v;7:022h302h502v442v533v113h333v223v042v142v412v102h032h002v;9:122h242h512v'+
+  '052h032v303v333h442h012v112h252h412v;7:022h003h323v042h503v252h422v442v312h112h033h;8:122h252h213h522v002v032v'+
+  '132v243h402h052h322v;8:022h243h312v032h522v412h402h203v;9:222h202v412v042v402h522v243h002h012v142v332h132h253h'+
+  ';6:122h232v142v323v253h513v013h413v;11:022h243h002v232h252h303v532v102h042v512v212v;8:022h232h212h032v442h502v'+
+  '002v142v422v522v302h452h242v102h;12:122h033h013h153h302h513v332v312h042v142h422v002h442h;8:122h412v012v442h332'+
+  'h042h352h402h513v232v152h202h102v212h;8:222h012h152h402h352h332h232v122v202v542v033v342h412v512v;14:122h242v40'+
+  '2h012h303v412v052h442h352h022v232h003h;11:122h413v243h522v502v133v302h042v003h012h252h232h452h022v;12:122h022v'+
+  '403v442h452h052h133h242v102h312v512v;10:022h032v212v052h542v412h352h132h313v422v243h103h;9:022h333h243h203v152'+
+  'h132h542v312v;13:022h242v312v102v042v412v402h133h512v202v432v;11:022h413v242v042h512v342h232h402h302v032h;10:1'+
+  '22h132v242v422v002v303h052h113h513v442h332v353h;9:022h202h432v222v412h252h242h002v212h133v;11:222h442h153h142h'+
+  '202h132h313h422v003v103v522v032v452h402h;9:122h022v403v332h352h342h302v132v112h232v;14:122h022v502v112h342v522'+
+  'v302h242v132v413v442h042v;10:122h032h512v352h102v312v202h242h332h412v442h042v402h;13:122h033h413v332v303h142h0'+
+  '42v202v352h542v152h512v102v;12:022h032h312v523v252h332h222v002v042v243h103h112h;16:122h042h012v503v403v442h242'+
+  'v212h202h102v332v432h352h;11:022h342v402h053h142h202v312h422v232h442h002v512v032v102v;13:222h052h332h012h042h2'+
+  '32v342v513v212h102h402v442h;12:122h412v342h402h302v242v542v322v142v033h202v042v352h;16:122h002h133v412v503v312'+
+  'v452h252h332h302h442h242h042v022v;12:122h452h042v102v152h212h523v413v232h302h032h;11:022h542v242h012h202h152h0'+
+  '32v313v432h222v502v002h412v;15:022h352h102v313v212v032v142h152h512v422v342h202h132h;17:022h242h312h502v352h522'+
+  'v033h142v422v002v322v212v;13:122h253h412v502v012v202v032v323v132h532v142v302h;17:022h503v452h442h002h152h202h4'+
+  '02v432h242h032h322v222v042v;12:022h333h203v252h143h302h002h502v312v032h;18:122h132v242v412v002v203h052h113h513'+
+  'v442h322v353h022v;11:122h312v233v332v352h302h442h522v003h012h412v052h;13:022h252h043h332v302h502v203v002v432v5'+
+  '42v;18:022h503v452h442h002h252h202h402v432h242h032h322v222v042v;14:122h533v132v202v002v152h042v312v352h302h502'+
+  'v232v332h;16:022h032v322v413v052h542v103h402h222v142h522v;14:122h242v313v342h032v012v003h502v522v413v;15:222h5'+
+  '22v352h142h413v302h232h342h042v542v102h032h012h;20:022h412h142h042v332v303h213v533v102v153h032h;20:122h452h022'+
+  'v403v502v302v142v002h322v342h233v;16:022h103h242h053h432v452h402v212v032v523v132v;19:122h252h142v302h012v343h2'+
+  '32v452h322v513v032h042v212h412v;18:122h302h442h252h202v012v452h043h412v513v332v032h;15:122h442h142v013v202h513'+
+  'v312v352h332v403v232v;15:122h252h142v302h012h343h232v002h322v513v032h042v212h412v;19:222h113h513v102h122v452h3'+
+  '42v152h442h232h413v042v302h;16:222h522v352h142h413v302h232h342h042v542v102h032h012h152h;20:022h322v242v112h222'+
+  'v513v402v002v302v422v102h032h;14:022h442h032v242v302h132h332v422v013h513v052h002h;17:022h412h212v142v402h323v1'+
+  '32h253h102h032v442h422v;16:022h012h542v522v403v143h332h052h202h002h222v212h032v;15:022h032v142h412v003h222v523'+
+  'v012h313v442v;21:022h412h002h322v302v242h432v252h132v452h052h202v222v532v;21:022h142v322v503v242v342h203h212v1'+
+  '32h413v352h032v;14:022h512v102v212v032v412v312v332v052h542v242v202h432v352h;18:022h312h142h302h003h152h222v042'+
+  'v522v322v452h423v;14:022h102h142v442h332h012h222v242h503v253h412v312v032v302h;16:222h132v403v102h232h032v342v1'+
+  '52h442h452h302v;23:022h442h232v252h412h303h332h032v452h212v312v102h522v142v;23:222h112v403v102h432h032v332v242'+
+  'v442h452h302v503v012v;19:122h452h022v413v502v302v142v002h322v342h233v;20:022h332v242v112h222v513v402v002v302v4'+
+  '22v102h032h;18:122h002h343h432h202v302h022v042h503v322v153h312h452h;16:022h152h342v432v533v113h402h222v412v042'+
+  'v142h322v;16:022h102h142v442h332h112h222v242h503v353h412v312v032v302h;24:022h442h232v252h412h303h332h042v452h2'+
+  '12v312v102h522v142v;16:022h342h102v042v352h032h312v402v222v332h522v152h202h542v;16:022h452h413v442h142v033v322'+
+  'v232v502v203h252h002v;22:122h442h142v013v202h503v312v432h332v403v232v352h;21:322h503v402v232v032h432h342v202v1'+
+  '12v452h002h152h;19:022h452h312v102v042v412v202h133h512v212v432v342v532v;18:022h503v223v053h312v032v302h112h332'+
+  'h102h342v412v;20:022h522v412h132h332h102h303h312v052h212v442h042h242v;26:122h242v313v342h032v012v003h542v522v4'+
+  '03v142v352h;23:222h233v442v342v003h032v522v412h332h302v542v012v052h;25:122h423v322v232v302v522v032h542v102v402'+
+  'h352h152h042v;20:022h322v252h512v032h402h202v042v222v242h002v312h542v142v;25:222h122v403v102h432h042v332v152h4'+
+  '42h452h302v502v232v012v;24:022h413v512v352h142v002v542v112h332v242v222v032h312v102h;19:022h242v452h442h332h012'+
+  'h003h222v303v032h402v;21:222h152h332h012h042v232v342v513v212h002h402v442h452h202h;27:022h402v103h132v452h232h4'+
+  '22v212v502v442h012h522v042v;22:222h432v003v542v202v412v122v522v352h143h302h;33:022h103h002v153h422v452h402v212'+
+  'v502v523v132v232h042v';
+
+const N = 6;
+
+/* ---------- РАЙОНЫ ----------
+   Игрок не видит названий. Район проявляется сменой гаммы фона
+   и короткой световой заставкой на переходе. */
+const DISTRICTS = [
+  { upto:15,  bg:'#F8F9FB', glow:['rgba(120,170,255,.55)','rgba(255,140,180,.4)','rgba(120,230,200,.48)'], word:'Спальный квартал' },
+  { upto:35,  bg:'#FAF8F5', glow:['rgba(255,190,120,.5)','rgba(255,150,150,.4)','rgba(255,215,130,.45)'], word:'Торговый центр' },
+  { upto:55,  bg:'#F6F9FA', glow:['rgba(110,200,220,.5)','rgba(140,180,255,.4)','rgba(130,225,200,.45)'], word:'Порт' },
+  { upto:75,  bg:'#FAF8F4', glow:['rgba(255,200,120,.5)','rgba(240,170,130,.42)','rgba(255,220,150,.45)'], word:'Старый город' },
+  { upto:90,  bg:'#F7F7FA', glow:['rgba(160,150,255,.45)','rgba(130,170,255,.42)','rgba(200,160,240,.4)'], word:'Деловой центр' },
+  { upto:100, bg:'#FAF7F6', glow:['rgba(255,150,110,.5)','rgba(255,120,140,.42)','rgba(255,190,120,.45)'], word:'Час пик' },
+];
+function districtOf(n){
+  for (let i = 0; i < DISTRICTS.length; i++) if (n <= DISTRICTS[i].upto) return i;
+  return DISTRICTS.length - 1;
+}
+
+// Пастельная палитра фишек — цвет декоративный, к длине не привязан
+const PALETTE = [
+  '#A6C8E8', '#BFB2E0', '#9AD0C0', '#EBD394',
+  '#AEC0DA', '#E6AEC0', '#D8C4AE', '#B4CCA8',
+];
+
+const LEVELS = LEVELS_RAW.split(';').map(function(item, i){
+  const p = item.split(':');
+  const cars = [];
+  for (let k = 0; k < p[1].length; k += 4)
+    cars.push({ x:+p[1][k], y:+p[1][k+1], len:+p[1][k+2], dir:p[1][k+3] });
+  return { n:i+1, par:+p[0], cars:cars };
+});
+
+/* ---------- СОХРАНЕНИЯ ----------
+   Основное — VK Storage (привязано к пользователю ВК и переживает
+   смену адреса игры на хостинге). localStorage — запасное.
+   Формат компактный: lv — текущий уровень, st — 100 цифр звёзд,
+   bs — рекорды, ach — открытые достижения, tut — обучение показано. */
+const SAVE_KEY = 'dp_save';
+let save = { lv:1, st:'0'.repeat(100), bs:new Array(100).fill(''), vol:60, sfx:true, hd:'', tut:0, ach:'', streak:0 };
+
+function encodeSave(){
+  return JSON.stringify({ lv:save.lv, st:save.st, bs:save.bs.join(','), vol:save.vol,
+    sfx:save.sfx?1:0, hd:save.hd, tut:save.tut, ach:save.ach, streak:save.streak });
+}
+function decodeSave(str){
+  try {
+    const d = JSON.parse(str);
+    if (!d || typeof d.lv !== 'number') return null;
+    return {
+      lv: Math.max(1, Math.min(101, d.lv)),
+      st: (typeof d.st === 'string' && d.st.length === 100) ? d.st : '0'.repeat(100),
+      bs: (typeof d.bs === 'string') ? d.bs.split(',').concat(new Array(100).fill('')).slice(0,100) : new Array(100).fill(''),
+      vol: (typeof d.vol === 'number') ? d.vol : 60,
+      sfx: d.sfx !== 0, hd: d.hd || '', tut: d.tut ? 1 : 0,
+      ach: d.ach || '', streak: d.streak || 0
+    };
+  } catch(e){ return null; }
+}
+function mergeSaves(a, b){
+  if (!a) return b; if (!b) return a;
+  const out = Object.assign({}, a.lv >= b.lv ? a : b);
+  out.lv = Math.max(a.lv, b.lv);
+  let st = ''; const bs = [];
+  for (let i = 0; i < 100; i++) {
+    st += String(Math.max(+a.st[i] || 0, +b.st[i] || 0));
+    const x = +a.bs[i] || 0, y = +b.bs[i] || 0;
+    bs.push(x && y ? String(Math.min(x, y)) : String(x || y || ''));
+  }
+  out.st = st; out.bs = bs;
+  out.hd = a.hd > b.hd ? a.hd : b.hd;
+  out.tut = a.tut || b.tut;
+  // достижения объединяем
+  const set = new Set((a.ach || '').split(',').concat((b.ach || '').split(',')).filter(Boolean));
+  out.ach = Array.from(set).join(',');
+  out.streak = Math.max(a.streak || 0, b.streak || 0);
+  return out;
+}
+let persistT = null;
+function persist(){
+  const enc = encodeSave();
+  try { localStorage.setItem(SAVE_KEY, enc); } catch(e){}
+  clearTimeout(persistT);
+  persistT = setTimeout(function(){
+    if (window.vkBridge) vkBridge.send('VKWebAppStorageSet', { key:SAVE_KEY, value:enc }).catch(function(){});
+  }, 700);
+}
+function loadSave(done){
+  let local = null;
+  try { local = decodeSave(localStorage.getItem(SAVE_KEY)); } catch(e){}
+  if (!window.vkBridge) { if (local) save = mergeSaves(save, local); done(); return; }
+  let finished = false;
+  function finish(cloud){
+    if (finished) return; finished = true;
+    save = mergeSaves(mergeSaves(save, local), cloud);
+    done();
+  }
+  vkBridge.send('VKWebAppStorageGet', { keys:[SAVE_KEY] })
+    .then(function(res){
+      let cloud = null;
+      if (res && res.keys) {
+        const item = res.keys.find(function(k){ return k.key === SAVE_KEY; });
+        if (item && item.value) cloud = decodeSave(item.value);
+      }
+      finish(cloud);
+    })
+    .catch(function(){ finish(null); });
+  setTimeout(function(){ finish(null); }, 2000);
+}
+
+/* ---------- ЗВУК ---------- */
+const bgm = document.getElementById('bgm');
+let AC = null;
+let audioStarted = false;   // музыка уже запускалась (после кнопки Играть)
+
+/* Замечание модерации: при сворачивании игры музыка должна вставать
+   на паузу. Слушаем события ВК (VKWebAppViewHide/Restore) и, как
+   запасной вариант вне ВК, стандартное visibilitychange браузера. */
+if (window.vkBridge) {
+  vkBridge.subscribe(function(e){
+    if (!e || !e.detail) return;
+    if (e.detail.type === 'VKWebAppViewHide') bgm.pause();
+    if (e.detail.type === 'VKWebAppViewRestore' && audioStarted && save.vol > 0)
+      bgm.play().catch(function(){});
+  });
+}
+document.addEventListener('visibilitychange', function(){
+  if (document.hidden) bgm.pause();
+  else if (audioStarted && save.vol > 0) bgm.play().catch(function(){});
+});
+function applyVolume(){ bgm.volume = Math.min(1, save.vol / 100); }
+function audioStart(){
+  applyVolume();
+  audioStarted = true;
+  if (save.vol > 0) bgm.play().catch(function(){});
+  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} }
+}
+function tone(freqs, dur, vol){
+  if (!save.sfx || !AC) return;
+  try {
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.connect(g); g.connect(AC.destination);
+    const t = AC.currentTime;
+    o.type = 'sine';
+    freqs.forEach(function(f, i){ o.frequency.setValueAtTime(f, t + i * (dur / freqs.length)); });
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    o.start(t); o.stop(t + dur + .02);
+  } catch(e){}
+}
+function sfx(kind){
+  if (kind === 'move')  tone([300], .1, .05);
+  if (kind === 'lift')  tone([440], .06, .03);
+  if (kind === 'star')  tone([784], .18, .07);
+  if (kind === 'win')   tone([523,659,784,1046], .7, .09);   // фанфара
+  if (kind === 'ach')   tone([659,880], .4, .07);
+}
+
+/* ---------- ПОМОЩНИКИ ---------- */
+const $ = function(id){ return document.getElementById(id); };
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function starSVG(filled, size){
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="'+(filled?'#E9A03C':'none')+'" stroke="'+(filled?'#E9A03C':'#C9CEDA')+'" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2l2.9 6.26 6.6.7-4.95 4.5 1.4 6.54L12 16.7 6.05 20l1.4-6.54L2.5 8.96l6.6-.7z"/></svg>';
+}
+function starsFor(n, moves){
+  const par = LEVELS[n-1].par;
+  if (moves <= par + 1) return 3;
+  if (moves <= par + 3) return 2;
+  return 1;
+}
+function totalStars(){
+  let s = 0;
+  for (let i = 0; i < 100; i++) s += +save.st[i];
+  return s;
+}
+let toastT = null;
+function toast(msg){
+  const el = $('toast');
+  el.textContent = msg; el.classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(function(){ el.classList.remove('on'); }, 2400);
+}
+
+/* ---------- ЖИВОЙ ФОН ---------- */
+let curBgLayer = 1, shownDistrict = -1;
+function setBackground(dIdx, instant){
+  if (dIdx === shownDistrict) return;
+  const d = DISTRICTS[dIdx];
+  const from = $(curBgLayer === 1 ? 'bg1' : 'bg2');
+  const to   = $(curBgLayer === 1 ? 'bg2' : 'bg1');
+  to.style.background = d.bg;
+  // цвета плывущих пятен тоже меняются
+  ['glow1','glow2','glow3'].forEach(function(id, i){
+    const el = $(id);
+    el.style.transition = instant ? 'none' : 'background 2.2s ease';
+    el.style.background = d.glow[i];
+  });
+  if (instant) {
+    to.style.transition = 'none'; from.style.transition = 'none';
+    to.style.opacity = 1; from.style.opacity = 0;
+    void to.offsetWidth;
+    to.style.transition = ''; from.style.transition = '';
+  } else {
+    to.style.opacity = 1; from.style.opacity = 0;
+  }
+  curBgLayer = curBgLayer === 1 ? 2 : 1;
+  shownDistrict = dIdx;
+}
+// Заметная световая заставка между районами
+function districtFlash(dIdx, after){
+  const v = $('district-veil');
+  $('dv-text').textContent = DISTRICTS[dIdx].word;
+  v.classList.add('on');
+  setTimeout(function(){
+    after();
+    setTimeout(function(){ v.classList.remove('on'); }, 800);
+  }, 950);
+}
+
+/* ---------- ПОЛЕ ---------- */
+let curN = 1, cars = [], moves = 0, undoStack = [], cellPx = 0, usedUndo = false, usedHint = false;
+const GAP = 4;      // плотная сетка
+const INSET = 2;    // фишка уже клетки: видно, что лежит в лунке
+
+function openLevel(n, withFlash){
+  curN = n;
+  const lv = LEVELS[n-1];
+  cars = lv.cars.map(function(c, i){ return { x:c.x, y:c.y, len:c.len, dir:c.dir, hero:i===0 }; });
+  moves = 0; undoStack = []; usedUndo = false; usedHint = false;
+  const d = districtOf(n);
+  const start = function(){
+    setBackground(d, false);
+    $('g-lv').textContent = 'Уровень ' + n;
+    $('g-par').textContent = lv.par;
+    const best = save.bs[n-1];
+    $('g-best-wrap').style.display = best ? '' : 'none';
+    if (best) $('g-best').textContent = best;
+    $('starbank-n').textContent = totalStars();
+    updateHUD();
+    buildBoard();
+    updateHintBtn();
+    maybeTutorial();
+  };
+  if (withFlash && d !== shownDistrict && shownDistrict !== -1) districtFlash(d, start);
+  else start();
+}
+function updateHUD(){
+  $('g-moves').textContent = moves;
+  const would = moves === 0 ? 3 : starsFor(curN, moves);
+  $('g-stars').innerHTML = starSVG(would>0,15) + starSVG(would>1,15) + starSVG(would>2,15);
+  $('btn-undo').disabled = undoStack.length === 0;
+}
+function buildBoard(){
+  const board = $('board');
+  Array.prototype.slice.call(board.children).forEach(function(ch){
+    if (ch.id !== 'tut') board.removeChild(ch);
+  });
+  const w = board.clientWidth;
+  cellPx = (w - GAP * (N - 1)) / N;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const c = document.createElement('div');
+    c.className = 'cell' + (x === N-1 && y === 2 ? ' exit' : '');
+    c.style.width = cellPx+'px'; c.style.height = cellPx+'px';
+    c.style.left = x*(cellPx+GAP)+'px'; c.style.top = y*(cellPx+GAP)+'px';
+    board.appendChild(c);
+  }
+  const ex = document.createElement('div');
+  ex.className = 'exit-mark'; ex.id = 'exit-mark';
+  ex.style.width = '16px'; ex.style.height = cellPx+'px';
+  ex.style.left = (N*(cellPx+GAP) - GAP - 1)+'px';
+  ex.style.top = 2*(cellPx+GAP)+'px';
+  ex.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#EE9179" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+  board.appendChild(ex);
+
+  cars.forEach(function(car, i){
+    const el = document.createElement('div');
+    el.className = 'car' + (car.hero ? ' hero' : '');
+    el.dataset.i = i;
+    if (!car.hero) {
+      // цвет декоративный, детерминированный — у всех игроков уровень выглядит одинаково
+      el.style.background = PALETTE[(curN * 3 + i * 5) % PALETTE.length];
+    }
+    el.style.width  = ((car.dir==='h' ? car.len*cellPx + (car.len-1)*GAP : cellPx) - INSET*2)+'px';
+    el.style.height = ((car.dir==='v' ? car.len*cellPx + (car.len-1)*GAP : cellPx) - INSET*2)+'px';
+    positionCar(el, car);
+    attachDrag(el);
+    board.appendChild(el);
+    car.el = el;
+  });
+  updateHeroGlow();
+}
+function positionCar(el, car){
+  // +INSET центрует фишку внутри её лунки
+  el.style.transform = 'translate('+(car.x*(cellPx+GAP)+INSET)+'px,'+(car.y*(cellPx+GAP)+INSET)+'px)';
+}
+// Целевая машина заметнее светится, когда путь к выходу свободен
+function updateHeroGlow(){
+  const hero = cars[0];
+  const g = occupancy(0);
+  let free = true;
+  for (let x = hero.x + hero.len; x < N; x++) if (g[2*N + x] !== -1) { free = false; break; }
+  hero.el.classList.toggle('ready', free);
+  const ex = $('exit-mark');
+  if (ex) ex.classList.toggle('hot', free);
+}
+
+/* ---------- ОБУЧЕНИЕ ---------- */
+function maybeTutorial(){
+  const t = $('tut');
+  if (curN === 1 && !save.tut) t.classList.add('on'); else t.classList.remove('on');
+}
+function tutorialDone(){
+  if (!save.tut) { save.tut = 1; persist(); }
+  $('tut').classList.remove('on');
+}
+
+/* ---------- ПЕРЕТАСКИВАНИЕ ---------- */
+function occupancy(skip){
+  const g = new Array(N*N).fill(-1);
+  cars.forEach(function(c, i){
+    if (i === skip) return;
+    for (let k = 0; k < c.len; k++) {
+      const cx = c.dir==='h' ? c.x+k : c.x;
+      const cy = c.dir==='h' ? c.y : c.y+k;
+      g[cy*N+cx] = i;
+    }
+  });
+  return g;
+}
+function dragBounds(i){
+  const car = cars[i], g = occupancy(i);
+  const fixed = car.dir==='h' ? car.y : car.x;
+  let lo = car.dir==='h' ? car.x : car.y, hi = lo;
+  while (lo > 0) {
+    const p = lo-1;
+    const cx = car.dir==='h' ? p : fixed, cy = car.dir==='h' ? fixed : p;
+    if (g[cy*N+cx] !== -1) break;
+    lo = p;
+  }
+  while (hi + car.len < N) {
+    const p = hi + car.len;
+    const cx = car.dir==='h' ? p : fixed, cy = car.dir==='h' ? fixed : p;
+    if (g[cy*N+cx] !== -1) break;
+    hi++;
+  }
+  return [lo, hi];
+}
+function attachDrag(el){
+  let startPos=0, startPx=0, lo=0, hi=0, dragging=false, curPx=0;
+  el.addEventListener('pointerdown', function(ev){
+    if ($('win-veil').classList.contains('on') || $('final-veil').classList.contains('on') || $('ach-veil').classList.contains('on')) return;
+    const i = +el.dataset.i, car = cars[i];
+    dragging = true;
+    el.setPointerCapture(ev.pointerId);
+    el.classList.add('lift');           // фишка приподнимается
+    sfx('lift');
+    startPos = car.dir==='h' ? car.x : car.y;
+    startPx  = car.dir==='h' ? ev.clientX : ev.clientY;
+    curPx = startPos*(cellPx+GAP);
+    const b = dragBounds(i); lo=b[0]; hi=b[1];
+  });
+  el.addEventListener('pointermove', function(ev){
+    if (!dragging) return;
+    const i = +el.dataset.i, car = cars[i];
+    const nowPx = car.dir==='h' ? ev.clientX : ev.clientY;
+    let px = startPos*(cellPx+GAP) + (nowPx - startPx);
+    px = Math.max(lo*(cellPx+GAP), Math.min(hi*(cellPx+GAP), px));
+    curPx = px;
+    if (car.dir==='h') el.style.transform = 'translate('+(px+INSET)+'px,'+(car.y*(cellPx+GAP)+INSET)+'px)';
+    else el.style.transform = 'translate('+(car.x*(cellPx+GAP)+INSET)+'px,'+(px+INSET)+'px)';
+  });
+  function release(){
+    if (!dragging) return;
+    dragging = false;
+    el.classList.remove('lift');
+    const i = +el.dataset.i, car = cars[i];
+    let snapped = Math.round(curPx/(cellPx+GAP));
+    snapped = Math.max(lo, Math.min(hi, snapped));
+    const changed = snapped !== startPos;
+    if (car.dir==='h') car.x = snapped; else car.y = snapped;
+    el.style.transition = 'transform .16s cubic-bezier(.2,.9,.3,1.35)';
+    positionCar(el, car);
+    setTimeout(function(){ el.style.transition = ''; }, 180);
+    if (changed) {
+      el.classList.add('settle');
+      setTimeout(function(){ el.classList.remove('settle'); }, 300);
+      undoStack.push({ i:i, from:startPos });
+      moves++;
+      sfx('move');
+      tutorialDone();
+      updateHUD();
+      updateHeroGlow();
+      if (car.hero && car.x + car.len >= N) win();
+    }
+  }
+  el.addEventListener('pointerup', release);
+  el.addEventListener('pointercancel', release);
+}
+function undo(){
+  const u = undoStack.pop();
+  if (!u) return;
+  usedUndo = true;
+  const car = cars[u.i];
+  if (car.dir==='h') car.x = u.from; else car.y = u.from;
+  car.el.style.transition = 'transform .16s cubic-bezier(.2,.9,.3,1.35)';
+  positionCar(car.el, car);
+  setTimeout(function(){ car.el.style.transition = ''; }, 180);
+  moves++;  // отмена — тоже ход, иначе звёзды можно накрутить перебором
+  updateHUD();
+  updateHeroGlow();
+}
+
+/* ---------- ПРАЗДНИК ---------- */
+const CONF_COLORS = ['#E85A8A','#D6336C','#EBD394','#FFC94D','#A6C8E8','#7FA9D4','#BFB2E0','#9C89C9','#9AD0C0','#E6AEC0'];
+function confetti(count){
+  const box = $('confetti');
+  for (let i = 0; i < count; i++) {
+    const d = document.createElement('div');
+    d.className = 'conf';
+    const size = 6 + Math.random()*7;
+    d.style.width = size+'px';
+    d.style.height = (size*0.6)+'px';
+    d.style.left = (Math.random()*100)+'vw';
+    d.style.background = CONF_COLORS[(Math.random()*CONF_COLORS.length)|0];
+    d.style.setProperty('--spin', (360 + Math.random()*720)+'deg');
+    d.style.animationDuration = (2 + Math.random()*1.8)+'s';
+    d.style.animationDelay = (Math.random()*.35)+'s';
+    d.style.opacity = .55 + Math.random()*.45;
+    box.appendChild(d);
+    setTimeout(function(){ if (d.parentNode) d.parentNode.removeChild(d); }, 4600);
+  }
+}
+
+/* ---------- ДОСТИЖЕНИЯ (без монеток, только признание) ---------- */
+const ACHIEVEMENTS = [
+  { id:'first',   text:'Первая машина на свободе' },
+  { id:'perfect', text:'Идеальное прохождение' },
+  { id:'streak3', text:'Три идеала подряд' },
+  { id:'nohint',  text:'20 уровней без подсказок' },
+  { id:'d1',      text:'Спальный квартал разобран' },
+  { id:'d2',      text:'Торговый центр разобран' },
+  { id:'d3',      text:'Порт разобран' },
+  { id:'d4',      text:'Старый город разобран' },
+  { id:'d5',      text:'Деловой центр разобран' },
+  { id:'stars50', text:'50 звёзд собрано' },
+  { id:'stars150',text:'150 звёзд собрано' },
+  { id:'stars250',text:'250 звёзд собрано' },
+];
+let achQueue = [], achBusy = false;
+function hasAch(id){ return (','+save.ach+',').indexOf(','+id+',') !== -1; }
+function grantAch(id){
+  if (hasAch(id)) return;
+  save.ach = save.ach ? save.ach + ',' + id : id;
+  persist();
+  const a = ACHIEVEMENTS.find(function(x){ return x.id === id; });
+  if (a) { achQueue.push(a.text); pumpAch(); }
+}
+function pumpAch(){
+  if (achBusy || !achQueue.length) return;
+  achBusy = true;
+  const text = achQueue.shift();
+  $('ach-text').textContent = text;
+  $('ach').classList.add('on');
+  sfx('ach');
+  setTimeout(function(){
+    $('ach').classList.remove('on');
+    setTimeout(function(){ achBusy = false; pumpAch(); }, 450);
+  }, 2600);
+}
+function checkAchievements(st){
+  if (curN === 1) grantAch('first');
+  if (st === 3) grantAch('perfect');
+  if (save.streak >= 3) grantAch('streak3');
+  const tot = totalStars();
+  if (tot >= 50)  grantAch('stars50');
+  if (tot >= 150) grantAch('stars150');
+  if (tot >= 250) grantAch('stars250');
+  // район пройден целиком
+  const bounds = [15,35,55,75,90];
+  bounds.forEach(function(b, i){
+    let all = true;
+    for (let k = 0; k < b; k++) if (+save.st[k] === 0) { all = false; break; }
+    if (all) grantAch('d' + (i+1));
+  });
+  // 20 уровней без подсказок
+  if (save.lv > 20 && !save.hd) grantAch('nohint');
+}
+
+/* ---------- ПОБЕДА ---------- */
+const PRAISE = {
+  3: ['Идеально!','Блестяще!','Чисто сработано!','Великолепно!'],
+  2: ['Отлично!','Хорошо!','Почти идеально!','Славно!'],
+  1: ['Готово!','Есть!','Проехали!','Свободна!']
+};
+function win(){
+  const hero = cars[0];
+  hero.el.style.transition = 'transform .6s cubic-bezier(.4,0,.75,1), opacity .6s';
+  hero.el.style.transform = 'translate('+(8*(cellPx+GAP))+'px,'+(hero.y*(cellPx+GAP)+INSET)+'px)';
+  hero.el.style.opacity = '0';
+  sfx('win');
+
+  const st = starsFor(curN, moves);
+  const idx = curN - 1;
+  const prevStars = +save.st[idx];
+  if (st > prevStars) save.st = save.st.slice(0, idx) + st + save.st.slice(idx+1);
+  const prevBest = +save.bs[idx] || 0;
+  const isRecord = !prevBest || moves < prevBest;
+  if (isRecord) save.bs[idx] = String(moves);
+  save.streak = (st === 3) ? save.streak + 1 : 0;
+  if (curN >= save.lv) save.lv = Math.min(curN + 1, 101);
+  persist();
+
+  confetti(st === 3 ? 90 : st === 2 ? 60 : 40);
+  $('starbank-n').textContent = totalStars();
+  $('starbank').classList.add('bump');
+  setTimeout(function(){ $('starbank').classList.remove('bump'); }, 550);
+
+  setTimeout(function(){
+    if (curN >= LEVELS.length) { showFinal(); return; }
+    const list = PRAISE[st];
+    $('win-title').textContent = list[(Math.random()*list.length)|0];
+    $('win-sub').textContent = st === 3 ? 'Лучше некуда' : (st === 2 ? 'Совсем близко к идеалу' : 'Уровень пройден');
+    // звёзды прилетают по одной со звоном
+    $('win-stars').innerHTML = starSVG(st>0,44) + starSVG(st>1,44) + starSVG(st>2,44);
+    const svgs = $('win-stars').children;
+    for (let i = 0; i < 3; i++) {
+      (function(i){
+        setTimeout(function(){
+          svgs[i].classList.add('show');
+          if (i < st) sfx('star');
+        }, 160 + i*180);
+      })(i);
+    }
+    let info = 'Ходов <b>'+moves+'</b> · цель <b>'+LEVELS[idx].par+'</b>';
+    if (isRecord && prevBest) info += '<div class="badge-new">Новый рекорд</div>';
+    else if (!isRecord) info += ' · рекорд <b>'+prevBest+'</b>';
+    if (st < 3) info += '<br><span style="font-size:12.5px">Три звезды — за '+(LEVELS[idx].par+1)+' ходов или меньше</span>';
+    $('win-info').innerHTML = info;
+    $('win-veil').classList.add('on');
+    checkAchievements(st);
+  }, 640);
+}
+function showFinal(){
+  confetti(140);
+  $('final-stars').innerHTML = 'Собрано звёзд: <b>'+totalStars()+' из 300</b>';
+  $('final-veil').classList.add('on');
+}
+
+/* ---------- ПОДСКАЗКА ---------- */
+function solveFirstMove(){
+  const meta = cars.map(function(c){ return { len:c.len, dir:c.dir, fixed:c.dir==='h'?c.y:c.x }; });
+  const start = cars.map(function(c){ return c.dir==='h'?c.x:c.y; });
+  const heroLen = meta[0].len;
+  function isWin(st){ return st[0] + heroLen >= N; }
+  if (isWin(start)) return null;
+  const seen = new Set([start.join(',')]);
+  const q = [{ st:start, first:null }];
+  let head = 0;
+  while (head < q.length) {
+    const cur = q[head++];
+    if (seen.size > 400000) return null;
+    const st = cur.st;
+    const g = new Array(N*N).fill(-1);
+    for (let i = 0; i < st.length; i++) {
+      const m = meta[i];
+      for (let k = 0; k < m.len; k++) {
+        const cx = m.dir==='h' ? st[i]+k : m.fixed;
+        const cy = m.dir==='h' ? m.fixed : st[i]+k;
+        g[cy*N+cx] = i;
+      }
+    }
+    for (let i = 0; i < st.length; i++) {
+      const m = meta[i];
+      for (let step = -1; step <= 1; step += 2) {
+        let np = st[i];
+        for (;;) {
+          np += step;
+          if (np < 0 || np + m.len > N) break;
+          const edge = step < 0 ? np : np + m.len - 1;
+          const cx = m.dir==='h' ? edge : m.fixed;
+          const cy = m.dir==='h' ? m.fixed : edge;
+          if (g[cy*N+cx] !== -1) break;
+          const ns = st.slice(); ns[i] = np;
+          const k2 = ns.join(',');
+          if (!seen.has(k2)) {
+            seen.add(k2);
+            const first = cur.first || { i:i, to:np };
+            if (i === 0 && isWin(ns)) return first;
+            q.push({ st:ns, first:first });
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
+// На уровнях 1–20 подсказка без ограничений (обучение),
+// с 21-го — одна бесплатная в день.
+const FREE_HINT_UNTIL = 10;   // до 10 уровня подсказки свободные, дальше 1 в день + реклама
+function hintLimited(){ return curN > FREE_HINT_UNTIL && save.hd === todayStr(); }
+function updateHintBtn(){
+  const btn = $('btn-hint');
+  btn.disabled = false;
+  // дневная бесплатная потрачена -> предлагаем подсказку за рекламу
+  btn.textContent = hintLimited() ? 'Подсказка за рекламу' : 'Подсказка';
+}
+// Собственно выдача подсказки (решатель + подсветка машины)
+function grantHint(){
+  const mv = solveFirstMove();
+  if (!mv) { toast('Ход не нашёлся, попробуй сама'); return; }
+  usedHint = true;
+  const car = cars[mv.i];
+  car.el.classList.add('hint-flash');
+  setTimeout(function(){ car.el.classList.remove('hint-flash'); }, 2900);
+  const cur = car.dir==='h' ? car.x : car.y;
+  const word = car.dir==='h' ? (mv.to > cur ? 'вправо' : 'влево') : (mv.to > cur ? 'вниз' : 'вверх');
+  toast((car.hero ? 'Коралловую машину ' : 'Подсвеченную машину ') + word);
+}
+/* Реклама за подсказку (замечание модерации о монетизации).
+   Сначала проверяем наличие рекламы (VKWebAppCheckNativeAds),
+   потом показываем (VKWebAppShowNativeAds). Если рекламы нет или
+   она не загрузилась — игра НЕ ломается, честно говорим игроку. */
+function showRewardAd(){
+  if (!window.vkBridge) { grantHint(); return; }   // вне ВК (локальная отладка) — просто даём подсказку
+  toast('Загружаем рекламу…');
+  vkBridge.send('VKWebAppCheckNativeAds', { ad_format: 'reward' })
+    .then(function(r){
+      if (r && r.result) {
+        return vkBridge.send('VKWebAppShowNativeAds', { ad_format: 'reward' })
+          .then(function(res){
+            if (res && res.result) grantHint();          // ролик досмотрен — награда
+            else toast('Реклама не досмотрена до конца');
+          });
+      }
+      toast('Реклама пока недоступна — попробуй позже');
+    })
+    .catch(function(){ toast('Реклама пока недоступна — попробуй позже'); });
+}
+function useHint(){
+  if (hintLimited()) { showRewardAd(); return; }    // лимит исчерпан -> подсказка за рекламу
+  if (curN > FREE_HINT_UNTIL) { save.hd = todayStr(); persist(); }  // тратим дневную бесплатную
+  updateHintBtn();
+  grantHint();
+}
+
+/* ---------- КНОПКИ ---------- */
+$('btn-play').addEventListener('click', function(){
+  audioStart();
+  $('splash').classList.add('hidden');
+});
+$('btn-settings').addEventListener('click', function(){
+  $('set-vol').value = save.vol;
+  $('set-sfx').classList.toggle('on', save.sfx);
+  const done = save.lv - 1;
+  const achN = save.ach ? save.ach.split(',').filter(Boolean).length : 0;
+  $('set-stats').innerHTML = 'Пройдено уровней: <b>'+Math.min(done,100)+' из 100</b><br>'+
+    'Собрано звёзд: <b>'+totalStars()+' из 300</b><br>'+
+    'Достижений: <b>'+achN+' из '+ACHIEVEMENTS.length+'</b>';
+  $('set-veil').classList.add('on');
+});
+$('set-close').addEventListener('click', function(){ $('set-veil').classList.remove('on'); persist(); });
+// Экран достижений: полный список, открытые отмечены
+function renderAchList(){
+  const star = '<svg width="17" height="17" viewBox="0 0 24 24" fill="#fff" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2l2.9 6.26 6.6.7-4.95 4.5 1.4 6.54L12 16.7 6.05 20l1.4-6.54L2.5 8.96l6.6-.7z"/></svg>';
+  const lock = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9AA0AC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+  $('ach-list').innerHTML = ACHIEVEMENTS.map(function(a){
+    const done = hasAch(a.id);
+    return '<div class="ach-row ' + (done ? 'done' : 'lock') + '">' +
+      '<div class="dot">' + (done ? star : lock) + '</div>' +
+      '<div class="name">' + a.text + '</div></div>';
+  }).join('');
+}
+$('btn-ach-list').addEventListener('click', function(){
+  renderAchList();
+  $('set-veil').classList.remove('on');
+  $('ach-veil').classList.add('on');
+});
+$('ach-close').addEventListener('click', function(){ $('ach-veil').classList.remove('on'); });
+$('set-vol').addEventListener('input', function(){
+  save.vol = +this.value;
+  applyVolume();
+  if (save.vol > 0 && bgm.paused) bgm.play().catch(function(){});
+  if (save.vol === 0) bgm.pause();
+});
+$('set-sfx').addEventListener('click', function(){
+  save.sfx = !save.sfx;
+  this.classList.toggle('on', save.sfx);
+  persist();
+  if (save.sfx) sfx('move');
+});
+$('btn-restart').addEventListener('click', function(){ openLevel(curN, false); });
+$('btn-undo').addEventListener('click', undo);
+$('btn-hint').addEventListener('click', useHint);
+$('win-replay').addEventListener('click', function(){ $('win-veil').classList.remove('on'); openLevel(curN, false); });
+$('win-next').addEventListener('click', function(){ $('win-veil').classList.remove('on'); openLevel(curN+1, true); });
+
+let resizeT = null;
+window.addEventListener('resize', function(){
+  clearTimeout(resizeT);
+  resizeT = setTimeout(buildBoard, 150);
+});
+
+/* ---------- СТАРТ ---------- */
+loadSave(function(){
+  applyVolume();
+  if (save.lv > LEVELS.length) {
+    setBackground(DISTRICTS.length-1, true);
+    openLevel(LEVELS.length, false);
+    showFinal();
+  } else {
+    setBackground(districtOf(save.lv), true);
+    openLevel(save.lv, false);
+  }
+});
+
+</script>
+</body>
+</html>
