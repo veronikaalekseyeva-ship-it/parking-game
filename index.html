@@ -243,6 +243,49 @@ input[type=range]{flex:1;max-width:170px;accent-color:#D6336C}
 .ach-row .name{font-size:14px;color:#1D1D1F;font-weight:500}
 .ach-row.lock .name{color:#9AA0AC;font-weight:400}
 
+/* карта уровней */
+.map-sheet{max-height:86dvh;overflow-y:auto;text-align:left;padding:24px 20px}
+.map-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+.map-sub{font-size:12.5px;color:#8A90A0;line-height:1.5;margin-top:4px}
+.city-road{position:relative;padding:4px 0 2px 42px}
+.city-road::before{content:'';position:absolute;left:17px;top:20px;bottom:38px;width:4px;border-radius:3px;background:linear-gradient(180deg,#D6336C 0%,#D6336C var(--road-progress),rgba(120,130,155,.18) var(--road-progress),rgba(120,130,155,.18) 100%)}
+.district-stop{position:relative;margin-bottom:13px}
+.district-pin{position:absolute;left:-42px;top:18px;width:36px;height:36px;border-radius:50%;z-index:2;display:flex;align-items:center;justify-content:center;background:#E9EBF0;color:#9AA0AC;box-shadow:0 2px 8px rgba(60,70,100,.12);font-size:13px;font-weight:700}
+.district-pin.done{background:#34C759;color:#fff}
+.district-pin.current{background:#D6336C;color:#fff;box-shadow:0 4px 14px rgba(214,51,108,.36);animation:beat 2.4s ease-in-out infinite}
+@keyframes beat{50%{transform:scale(1.08)}}
+.district-card{position:relative;overflow:hidden;border-radius:18px;padding:14px;background:rgba(245,247,250,.92);box-shadow:0 4px 17px rgba(60,70,100,.09),inset 0 1px 1px rgba(255,255,255,.85)}
+.district-card.locked{filter:saturate(.45);opacity:.66}
+.district-halo{position:absolute;inset:-45%;filter:blur(30px);opacity:.48;pointer-events:none}
+.district-inside{position:relative}
+.district-name{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;font-size:14px;font-weight:650;color:#3A3F49}
+.district-name span:last-child{font-size:11.5px;font-weight:500;color:#7F8590;text-align:right}
+.district-progress{height:5px;border-radius:4px;background:rgba(255,255,255,.62);overflow:hidden;margin:-2px 0 10px}
+.district-progress i{display:block;height:100%;border-radius:4px;background:#D6336C}
+.level-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.level-node{min-width:0;aspect-ratio:1;border-radius:12px;background:rgba(255,255,255,.66);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12.5px;font-weight:650;color:#4A4F5A;box-shadow:inset 0 1px 1px rgba(255,255,255,.75);transition:transform .15s,background .15s}
+.level-node:active{transform:scale(.94)}
+.level-node.done{background:rgba(214,51,108,.1);color:#B82357}
+.level-node.current{background:#D6336C;color:#fff;box-shadow:0 4px 12px rgba(214,51,108,.28)}
+.level-node.locked{opacity:.38;cursor:default}
+.level-node small{height:10px;font-size:8px;letter-spacing:-1px;color:#DEA96E}
+.level-node.current small{color:#FFE0A9}
+
+/* обучение и ежедневная награда */
+.intro-visual{width:92px;height:92px;margin:2px auto 18px;position:relative}
+.intro-road{position:absolute;inset:0;border-radius:24px;background:rgba(226,232,242,.8);box-shadow:inset 0 2px 4px rgba(100,120,150,.12)}
+.intro-car{position:absolute;left:18px;top:36px;width:54px;height:21px;border-radius:8px;background:linear-gradient(180deg,#E85A8A,#C92A5E);box-shadow:0 6px 14px rgba(214,51,108,.3);animation:introDrive 2.4s ease-in-out infinite}
+@keyframes introDrive{0%,100%{transform:translateX(-8px)}50%{transform:translateX(16px)}}
+.intro-copy{font-size:14px;line-height:1.55;color:#686E7A;margin:10px 0 20px}
+.intro-copy b{color:#1D1D1F}
+.daily-icon{font-size:44px;margin:2px 0 8px}
+.daily-days{display:flex;justify-content:center;gap:5px;margin:16px 0 18px}
+.daily-day{width:34px;height:42px;border-radius:11px;background:#ECEFF5;color:#8A90A0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;line-height:1.15}
+.daily-day b{font-size:13px;color:#4A4F5A}
+.daily-day.done{background:rgba(214,51,108,.1);color:#B82357}
+.daily-day.today{background:#D6336C;color:#fff;box-shadow:0 4px 12px rgba(214,51,108,.25)}
+.daily-day.today b{color:#fff}
+
 .final-big{font-size:46px;margin:8px 0 0}
 .toast{
   position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(90px);
@@ -303,6 +346,9 @@ input[type=range]{flex:1;max-width:170px;accent-color:#D6336C}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="#DEA96E" stroke="#DEA96E" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2l2.9 6.26 6.6.7-4.95 4.5 1.4 6.54L12 16.7 6.05 20l1.4-6.54L2.5 8.96l6.6-.7z"/></svg>
         <span id="starbank-n">0</span>
       </div>
+      <button class="gear" id="btn-levels" aria-label="Карта уровней">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+      </button>
       <button class="gear" id="btn-settings" aria-label="Настройки">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
       </button>
@@ -335,6 +381,44 @@ input[type=range]{flex:1;max-width:170px;accent-color:#D6336C}
       <button class="btn" id="win-replay">Ещё раз</button>
       <button class="btn accent" id="win-next">Дальше</button>
     </div>
+  </div>
+</div>
+
+<!-- ===================== КАРТА УРОВНЕЙ ===================== -->
+<div class="veil" id="map-veil">
+  <div class="sheet map-sheet">
+    <div class="map-top">
+      <div>
+        <div class="set-title" style="margin-bottom:0">Карта города</div>
+        <div class="map-sub" id="map-summary"></div>
+      </div>
+      <button class="gear" id="map-close" aria-label="Закрыть">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div id="level-map"></div>
+  </div>
+</div>
+
+<!-- ===================== ПЕРВОЕ ОБУЧЕНИЕ ===================== -->
+<div class="veil" id="intro-veil">
+  <div class="sheet">
+    <div class="intro-visual"><div class="intro-road"></div><div class="intro-car"></div></div>
+    <div class="win-title">Освободи выезд</div>
+    <div class="intro-copy">Передвигай машины только вдоль их направления. Выведи <b>коралловую машину</b> вправо. Чем меньше ходов, тем больше звёзд.</div>
+    <div class="win-sub" style="margin:-10px 0 18px">Загляни завтра за бесплатной подсказкой</div>
+    <button class="btn accent" id="intro-close" style="width:100%">Начать</button>
+  </div>
+</div>
+
+<!-- ===================== ЕЖЕДНЕВНАЯ НАГРАДА ===================== -->
+<div class="veil" id="daily-veil">
+  <div class="sheet">
+    <div class="daily-icon">🎁</div>
+    <div class="win-title">Награда за возвращение</div>
+    <div class="win-sub" id="daily-sub"></div>
+    <div class="daily-days" id="daily-days"></div>
+    <button class="btn accent" id="daily-claim" style="width:100%"></button>
   </div>
 </div>
 
@@ -377,6 +461,10 @@ input[type=range]{flex:1;max-width:170px;accent-color:#D6336C}
     <div class="final-big">🎉</div>
     <div class="win-info" id="final-stars" style="margin-top:12px"></div>
     <div class="win-sub">Все машины выехали. Новые районы уже строятся — загляни позже.</div>
+    <div class="row" style="margin-top:20px">
+      <button class="btn" id="final-map">Карта уровней</button>
+      <button class="btn accent" id="final-replay">Ещё раз</button>
+    </div>
   </div>
 </div>
 
@@ -492,30 +580,50 @@ const LEVELS = LEVELS_RAW.split(';').map(function(item, i){
    Формат компактный: lv — текущий уровень, st — 100 цифр звёзд,
    bs — рекорды, ach — открытые достижения, tut — обучение показано. */
 const SAVE_KEY = 'dp_save';
-let save = { lv:1, st:'0'.repeat(100), bs:new Array(100).fill(''), vol:60, sfx:true, hd:'', tut:0, ach:'', streak:0, hints:3 };
+const SAVE_SCHEMA = 3;
+let save = {
+  schema:SAVE_SCHEMA, ts:0, lv:1, st:'0'.repeat(100),
+  bs:new Array(100).fill(''), vol:60, sfx:true, hd:'', tut:0,
+  ach:'', streak:0, hints:1, nhc:0, intro:0, dd:'', ds:0
+};
 
 function encodeSave(){
-  return JSON.stringify({ lv:save.lv, st:save.st, bs:save.bs.join(','), vol:save.vol,
-    sfx:save.sfx?1:0, hd:save.hd, tut:save.tut, ach:save.ach, streak:save.streak, hints:save.hints });
+  return JSON.stringify({ schema:SAVE_SCHEMA, ts:save.ts, lv:save.lv, st:save.st,
+    bs:save.bs.join(','), vol:save.vol, sfx:save.sfx?1:0, hd:save.hd,
+    tut:save.tut, ach:save.ach, streak:save.streak, hints:save.hints,
+    nhc:save.nhc, intro:save.intro, dd:save.dd, ds:save.ds });
 }
 function decodeSave(str){
   try {
     const d = JSON.parse(str);
     if (!d || typeof d.lv !== 'number') return null;
     return {
+      schema: (typeof d.schema === 'number') ? d.schema : 1,
+      ts: (typeof d.ts === 'number' && isFinite(d.ts)) ? Math.max(0, d.ts) : 0,
       lv: Math.max(1, Math.min(101, d.lv)),
       st: (typeof d.st === 'string' && d.st.length === 100) ? d.st : '0'.repeat(100),
       bs: (typeof d.bs === 'string') ? d.bs.split(',').concat(new Array(100).fill('')).slice(0,100) : new Array(100).fill(''),
-      vol: (typeof d.vol === 'number') ? d.vol : 60,
+      vol: (typeof d.vol === 'number') ? Math.max(0, Math.min(100, d.vol)) : 60,
       sfx: d.sfx !== 0, hd: d.hd || '', tut: d.tut ? 1 : 0,
-      ach: d.ach || '', streak: d.streak || 0,
-      hints: (typeof d.hints === 'number') ? d.hints : 3
+      ach: d.ach || '', streak: Math.max(0, Math.floor(d.streak || 0)),
+      hints: (typeof d.hints === 'number') ? Math.max(0, Math.floor(d.hints)) : 1,
+      nhc: (typeof d.nhc === 'number') ? Math.max(0, Math.floor(d.nhc)) : 0,
+      intro: (typeof d.intro === 'number') ? (d.intro ? 1 : 0) : (d.tut ? 1 : 0),
+      dd: (typeof d.dd === 'string') ? d.dd : '',
+      ds: (typeof d.ds === 'number') ? Math.max(0, Math.min(7, Math.floor(d.ds))) : 0
     };
   } catch(e){ return null; }
 }
 function mergeSaves(a, b){
   if (!a) return b; if (!b) return a;
-  const out = Object.assign({}, a.lv >= b.lv ? a : b);
+  /* Прогресс объединяем, а расходуемые значения берём из самой свежей
+     записи. Так устаревшее облачное сохранение не возвращает потраченные
+     подсказки. У старых сохранений без времени при равенстве выбираем b. */
+  const aTs = a.ts || 0, bTs = b.ts || 0;
+  const preferred = aTs === bTs ? (a.lv > b.lv ? a : b) : (aTs > bTs ? a : b);
+  const out = Object.assign({}, preferred);
+  out.schema = SAVE_SCHEMA;
+  out.ts = Math.max(aTs, bTs);
   out.lv = Math.max(a.lv, b.lv);
   let st = ''; const bs = [];
   for (let i = 0; i < 100; i++) {
@@ -529,12 +637,19 @@ function mergeSaves(a, b){
   // достижения объединяем
   const set = new Set((a.ach || '').split(',').concat((b.ach || '').split(',')).filter(Boolean));
   out.ach = Array.from(set).join(',');
-  out.streak = Math.max(a.streak || 0, b.streak || 0);
-  out.hints = Math.max(a.hints || 0, b.hints || 0);
+  out.streak = preferred.streak || 0;
+  out.hints = Math.max(0, preferred.hints || 0);
+  out.nhc = Math.max(0, preferred.nhc || 0);
+  out.intro = a.intro || b.intro ? 1 : 0;
+  const dailySource = (a.dd || '') === (b.dd || '') ? preferred : ((a.dd || '') > (b.dd || '') ? a : b);
+  out.dd = dailySource.dd || '';
+  out.ds = Math.max(0, Math.min(7, dailySource.ds || 0));
   return out;
 }
 let persistT = null;
 function persist(){
+  save.schema = SAVE_SCHEMA;
+  save.ts = Date.now();
   const enc = encodeSave();
   try { localStorage.setItem(SAVE_KEY, enc); } catch(e){}
   clearTimeout(persistT);
@@ -549,7 +664,9 @@ function loadSave(done){
   let finished = false;
   function finish(cloud){
     if (finished) return; finished = true;
-    save = mergeSaves(mergeSaves(save, local), cloud);
+    /* Локальная запись идёт последней, чтобы у старых сохранений без ts
+       именно она побеждала при полном равенстве. */
+    save = mergeSaves(mergeSaves(save, cloud), local);
     done();
   }
   vkBridge.send('VKWebAppStorageGet', { keys:[SAVE_KEY] })
@@ -615,6 +732,26 @@ function sfx(kind){
 
 /* ---------- ПОМОЩНИКИ ---------- */
 const $ = function(id){ return document.getElementById(id); };
+
+/* ---------- АНАЛИТИКА VK ----------
+   VKWebAppTrackEvent отправляет только продуктовые события. Если игра
+   запущена вне ВК или Bridge временно недоступен, игровой процесс не
+   прерывается. Значения параметров приводим к строкам для совместимости
+   со статистикой VK и MyTracker. */
+const TRACK_USER_ID = new URLSearchParams(window.location.search).get('vk_user_id') || '';
+const DEBUG_ADS = new URLSearchParams(window.location.search).get('debug_ads') === '1' && !TRACK_USER_ID;
+function trackEvent(name, params){
+  if (!window.vkBridge) return;
+  const clean = {};
+  Object.keys(params || {}).forEach(function(key){
+    const value = params[key];
+    if (value !== undefined && value !== null) clean[key] = String(value);
+  });
+  const payload = { event_name:name, event_params:clean };
+  if (TRACK_USER_ID) payload.custom_user_id = TRACK_USER_ID;
+  vkBridge.send('VKWebAppTrackEvent', payload).catch(function(){});
+}
+
 function todayStr(){
   const d = new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -639,6 +776,89 @@ function toast(msg){
   el.textContent = msg; el.classList.add('on');
   clearTimeout(toastT);
   toastT = setTimeout(function(){ el.classList.remove('on'); }, 2400);
+}
+
+/* ---------- КАРТА УРОВНЕЙ ---------- */
+function renderLevelMap(){
+  const unlocked = Math.min(save.lv, LEVELS.length);
+  const completed = save.st.split('').filter(function(x){ return +x > 0; }).length;
+  $('map-summary').textContent = 'Пройдено ' + completed + ' из 100 · собрано ' + totalStars() + ' звёзд';
+  let from = 1;
+  const districtHtml = DISTRICTS.map(function(d, dIdx){
+    const nodes = [];
+    let districtDone = 0;
+    for (let n = from; n <= d.upto; n++) {
+      const stars = +save.st[n-1] || 0;
+      if (stars) districtDone++;
+      const locked = n > unlocked;
+      const cls = locked ? 'locked' : (n === curN ? 'current' : (stars ? 'done' : ''));
+      const marks = stars ? '★'.repeat(stars) : '';
+      nodes.push('<button class="level-node '+cls+'" data-level="'+n+'" '+(locked?'disabled':'')+'><span>'+n+'</span><small>'+marks+'</small></button>');
+    }
+    const start = from;
+    const count = d.upto - start + 1;
+    const districtLocked = start > unlocked;
+    const pinClass = districtDone === count ? 'done' : (!districtLocked && unlocked <= d.upto ? 'current' : '');
+    const pinText = districtDone === count ? '✓' : (districtLocked ? '·' : String(dIdx + 1));
+    const halo = 'radial-gradient(45% 60% at 18% 18%,'+d.glow[0]+',transparent 72%),radial-gradient(50% 60% at 86% 78%,'+d.glow[2]+',transparent 72%)';
+    from = d.upto + 1;
+    return '<section class="district-stop"><div class="district-pin '+pinClass+'">'+pinText+'</div><div class="district-card '+(districtLocked?'locked':'')+'" style="background:'+d.bg+'"><div class="district-halo" style="background:'+halo+'"></div><div class="district-inside"><div class="district-name"><span>'+d.word+'</span><span>'+districtDone+' из '+count+'</span></div><div class="district-progress"><i style="width:'+(districtDone/count*100)+'%"></i></div><div class="level-grid">'+nodes.join('')+'</div></div></div></section>';
+  }).join('');
+  $('level-map').innerHTML = '<div class="city-road" style="--road-progress:'+completed+'%">'+districtHtml+'</div>';
+  Array.prototype.slice.call($('level-map').querySelectorAll('.level-node:not(.locked)')).forEach(function(btn){
+    btn.addEventListener('click', function(){
+      const n = +btn.dataset.level;
+      trackEvent('level_select', { level:n, from_level:curN });
+      $('map-veil').classList.remove('on');
+      $('final-veil').classList.remove('on');
+      openLevel(n, districtOf(n) !== shownDistrict, 'map');
+    });
+  });
+}
+function openLevelMap(source){
+  renderLevelMap();
+  $('map-veil').classList.add('on');
+  trackEvent('level_map_open', { level:curN, source:source || 'game' });
+}
+
+/* ---------- ЕЖЕДНЕВНОЕ ВОЗВРАЩЕНИЕ ---------- */
+let pendingDailyDay = 0;
+function dayNumber(s){
+  const p = String(s || '').split('-');
+  if (p.length !== 3) return 0;
+  return Math.floor(Date.UTC(+p[0], +p[1]-1, +p[2]) / 86400000);
+}
+function dailyDayForToday(){
+  const today = todayStr();
+  if (save.dd === today) return 0;
+  const consecutive = save.dd && dayNumber(today) - dayNumber(save.dd) === 1;
+  return consecutive ? ((save.ds || 0) % 7) + 1 : 1;
+}
+function maybeShowDailyReward(){
+  pendingDailyDay = dailyDayForToday();
+  if (!pendingDailyDay) return false;
+  const reward = pendingDailyDay === 7 ? 2 : 1;
+  $('daily-sub').textContent = 'День ' + pendingDailyDay + ' · ' + reward + (reward === 1 ? ' подсказка' : ' подсказки');
+  let html = '';
+  for (let i = 1; i <= 7; i++) {
+    const cls = i < pendingDailyDay ? 'done' : (i === pendingDailyDay ? 'today' : '');
+    html += '<div class="daily-day '+cls+'"><span>день</span><b>'+i+'</b></div>';
+  }
+  $('daily-days').innerHTML = html;
+  $('daily-claim').textContent = 'Забрать ' + (reward === 1 ? 'подсказку' : '2 подсказки');
+  $('daily-veil').classList.add('on');
+  trackEvent('daily_reward_offer', { day:pendingDailyDay, reward:reward });
+  return true;
+}
+
+/* ---------- ПЕРВОЕ ОБУЧЕНИЕ ---------- */
+function showFirstRunFlow(){
+  if (!save.intro) {
+    $('intro-veil').classList.add('on');
+    trackEvent('onboarding_open', { level:curN });
+    return;
+  }
+  maybeShowDailyReward();
 }
 
 /* ---------- ЖИВОЙ ФОН ---------- */
@@ -679,11 +899,22 @@ function districtFlash(dIdx, after){
 
 /* ---------- ПОЛЕ ---------- */
 let curN = 1, cars = [], moves = 0, undoStack = [], cellPx = 0, usedUndo = false, usedHint = false;
+let gameStarted = false, currentLevelSource = 'unknown';
 const GAP = 4;      // плотная сетка
 const INSET = 2;    // фишка уже клетки: видно, что лежит в лунке
 
-function openLevel(n, withFlash){
+function trackLevelStart(source){
+  trackEvent('level_start', {
+    level:curN,
+    district:districtOf(curN) + 1,
+    source:source || 'unknown',
+    previous_stars:+save.st[curN-1] || 0
+  });
+}
+
+function openLevel(n, withFlash, source){
   curN = n;
+  currentLevelSource = source || 'unknown';
   const lv = LEVELS[n-1];
   cars = lv.cars.map(function(c, i){ return { x:c.x, y:c.y, len:c.len, dir:c.dir, hero:i===0 }; });
   moves = 0; undoStack = []; usedUndo = false; usedHint = false;
@@ -700,6 +931,10 @@ function openLevel(n, withFlash){
     buildBoard();
     updateHintBtn();
     maybeTutorial();
+    if (gameStarted) {
+      trackLevelStart(currentLevelSource);
+      setTimeout(preloadAds, 900);
+    }
   };
   if (withFlash && d !== shownDistrict && shownDistrict !== -1) districtFlash(d, start);
   else start();
@@ -865,9 +1100,10 @@ function undo(){
   car.el.style.transition = 'transform .16s cubic-bezier(.2,.9,.3,1.35)';
   positionCar(car.el, car);
   setTimeout(function(){ car.el.style.transition = ''; }, 180);
-  moves++;  // отмена — тоже ход, иначе звёзды можно накрутить перебором
+  moves = Math.max(0, moves - 1);
   updateHUD();
   updateHeroGlow();
+  trackEvent('undo_use', { level:curN, moves:moves });
 }
 
 /* ---------- ПРАЗДНИК ---------- */
@@ -902,6 +1138,7 @@ const ACHIEVEMENTS = [
   { id:'d3',      text:'Порт разобран' },
   { id:'d4',      text:'Старый город разобран' },
   { id:'d5',      text:'Деловой центр разобран' },
+  { id:'d6',      text:'Час пик разобран' },
   { id:'stars50', text:'50 звёзд собрано' },
   { id:'stars150',text:'150 звёзд собрано' },
   { id:'stars250',text:'250 звёзд собрано' },
@@ -936,14 +1173,14 @@ function checkAchievements(st){
   if (tot >= 150) grantAch('stars150');
   if (tot >= 250) grantAch('stars250');
   // район пройден целиком
-  const bounds = [15,35,55,75,90];
+  const bounds = [15,35,55,75,90,100];
   bounds.forEach(function(b, i){
     let all = true;
     for (let k = 0; k < b; k++) if (+save.st[k] === 0) { all = false; break; }
     if (all) grantAch('d' + (i+1));
   });
-  // 20 уровней без подсказок
-  if (save.lv > 20 && !save.hd) grantAch('nohint');
+  // 20 впервые пройденных уровней подряд без подсказок
+  if (save.nhc >= 20) grantAch('nohint');
 }
 
 /* ---------- ПОБЕДА ---------- */
@@ -962,13 +1199,26 @@ function win(){
   const st = starsFor(curN, moves);
   const idx = curN - 1;
   const prevStars = +save.st[idx];
+  const firstCompletion = prevStars === 0;
   if (st > prevStars) save.st = save.st.slice(0, idx) + st + save.st.slice(idx+1);
   const prevBest = +save.bs[idx] || 0;
   const isRecord = !prevBest || moves < prevBest;
   if (isRecord) save.bs[idx] = String(moves);
   save.streak = (st === 3) ? save.streak + 1 : 0;
+  if (firstCompletion) save.nhc = usedHint ? 0 : save.nhc + 1;
   if (curN >= save.lv) save.lv = Math.min(curN + 1, 101);
   persist();
+  trackEvent('level_complete', {
+    level:curN,
+    district:districtOf(curN) + 1,
+    moves:moves,
+    par:LEVELS[idx].par,
+    stars:st,
+    first_completion:firstCompletion ? 1 : 0,
+    used_hint:usedHint ? 1 : 0,
+    used_undo:usedUndo ? 1 : 0
+  });
+  scheduleInterstitial(firstCompletion);
 
   confetti(st === 3 ? 90 : st === 2 ? 60 : 40);
   $('starbank-n').textContent = totalStars();
@@ -976,7 +1226,11 @@ function win(){
   setTimeout(function(){ $('starbank').classList.remove('bump'); }, 550);
 
   setTimeout(function(){
-    if (curN >= LEVELS.length) { showFinal(); return; }
+    if (curN >= LEVELS.length) {
+      checkAchievements(st);
+      showFinal();
+      return;
+    }
     const list = PRAISE[st];
     $('win-title').textContent = list[(Math.random()*list.length)|0];
     $('win-sub').textContent = st === 3 ? 'Лучше некуда' : (st === 2 ? 'Совсем близко к идеалу' : 'Уровень пройден');
@@ -1055,11 +1309,31 @@ function solveFirstMove(){
   return null;
 }
 /* ---------- ПОДСКАЗКИ: ЖЕТОНЫ + РЕКЛАМА ----------
-   У игрока есть жетоны подсказок (на старте 3). Каждая подсказка
+   У игрока есть жетоны подсказок (на старте 1). Каждая подсказка
    тратит один жетон. Когда жетоны кончились, кнопка предлагает
-   посмотреть рекламу и получить жетон. Это и есть монетизация:
+   посмотреть рекламу и получить две подсказки. Это и есть монетизация:
    ресурс тратится -> реклама его восполняет. */
-const START_HINTS = 3;
+const START_HINTS = 1;
+const REWARDED_HINTS = 2;
+let adBusy = false;
+const adReady = { reward:false, interstitial:false };
+const adChecking = { reward:false, interstitial:false };
+
+function preloadAd(format){
+  if (!window.vkBridge || adChecking[format] || adReady[format]) return;
+  adChecking[format] = true;
+  vkBridge.send('VKWebAppCheckNativeAds', { ad_format:format })
+    .then(function(r){
+      adReady[format] = !!(r && r.result);
+      trackEvent('ad_preload', { format:format, available:adReady[format] ? 1 : 0 });
+    })
+    .catch(function(){ adReady[format] = false; })
+    .finally(function(){ adChecking[format] = false; });
+}
+function preloadAds(){
+  preloadAd('reward');
+  preloadAd('interstitial');
+}
 
 function updateHintBtn(){
   const btn = $('btn-hint');
@@ -1074,47 +1348,150 @@ function updateHintBtn(){
 // Выдача подсказки: решатель находит нужный ход и подсвечивает машину
 function grantHint(){
   const mv = solveFirstMove();
-  if (!mv) { toast('Ход не нашёлся, попробуй сама'); return false; }
+  if (!mv) {
+    trackEvent('hint_not_found', { level:curN, moves:moves });
+    toast('Ход не нашёлся, попробуй сама');
+    return false;
+  }
   usedHint = true;
   const car = cars[mv.i];
   car.el.classList.add('hint-flash');
   setTimeout(function(){ car.el.classList.remove('hint-flash'); }, 2900);
   const cur = car.dir==='h' ? car.x : car.y;
   const word = car.dir==='h' ? (mv.to > cur ? 'вправо' : 'влево') : (mv.to > cur ? 'вниз' : 'вверх');
+  trackEvent('hint_granted', {
+    level:curN,
+    moves:moves,
+    car:mv.i,
+    direction:word
+  });
   toast((car.hero ? 'Коралловую машину ' : 'Подсвеченную машину ') + word);
   return true;
 }
 
-/* Реклама за жетон подсказки.
+/* Реклама за две подсказки.
    Проверяем наличие рекламы (VKWebAppCheckNativeAds), показываем
    (VKWebAppShowNativeAds), за досмотренный ролик начисляем жетон.
    Любая осечка обрабатывается — игра не ломается. */
 function showRewardAd(){
-  if (!window.vkBridge) {            // вне ВК (локальная отладка) — начисляем сразу
-    save.hints += 1; persist(); updateHintBtn();
-    toast('Получена подсказка');
+  if (adBusy) return;
+  trackEvent('reward_ad_offer', { level:curN, moves:moves, reward:'hint_2' });
+  function rewardAndHint(debug){
+    save.hints += REWARDED_HINTS;
+    persist();
+    updateHintBtn();
+    trackEvent(debug ? 'reward_ad_debug_reward' : 'reward_ad_complete', { level:curN, reward:'hint_2' });
+    toast('Получено 2 подсказки');
+    setTimeout(function(){
+      if (grantHint()) {
+        save.hints = Math.max(0, save.hints - 1);
+        persist();
+        updateHintBtn();
+      }
+    }, 350);
+  }
+  if (!window.vkBridge) {
+    if (DEBUG_ADS) rewardAndHint(true);
+    else toast('Реклама доступна при запуске игры во ВКонтакте');
     return;
   }
-  toast('Загружаем рекламу…');
-  vkBridge.send('VKWebAppCheckNativeAds', { ad_format: 'reward' })
+  adBusy = true;
+  toast(adReady.reward ? 'Открываем рекламу…' : 'Загружаем рекламу…');
+  let adStage = 'check';
+  const readyPromise = adReady.reward
+    ? Promise.resolve({ result:true })
+    : (trackEvent('reward_ad_check', { level:curN }), vkBridge.send('VKWebAppCheckNativeAds', { ad_format:'reward' }));
+  readyPromise
     .then(function(r){
       if (r && r.result) {
+        adReady.reward = false;
+        trackEvent('reward_ad_available', { level:curN });
+        adStage = 'show';
+        trackEvent('reward_ad_show', { level:curN });
         return vkBridge.send('VKWebAppShowNativeAds', { ad_format: 'reward' })
           .then(function(res){
             if (res && res.result) {
-              save.hints += 1; persist(); updateHintBtn();
-              toast('Получена подсказка');
+              rewardAndHint(false);
             } else {
+              trackEvent('reward_ad_cancel', { level:curN });
               toast('Реклама не досмотрена до конца');
             }
           });
       }
+      trackEvent('reward_ad_unavailable', { level:curN });
       toast('Реклама пока недоступна — попробуй позже');
     })
-    .catch(function(){ toast('Реклама пока недоступна — попробуй позже'); });
+    .catch(function(error){
+      trackEvent('reward_ad_error', {
+        level:curN,
+        stage:adStage,
+        code:error && error.error_type ? error.error_type : 'unknown'
+      });
+      toast('Реклама пока недоступна — попробуй позже');
+    })
+    .finally(function(){
+      adBusy = false;
+      setTimeout(function(){ preloadAd('reward'); }, 5000);
+    });
+}
+
+/* ---------- МЕЖУРОВНЕВАЯ РЕКЛАМА ---------- */
+const INTERSTITIAL_COOLDOWN = 180000;
+const INTERSTITIAL_SESSION_LIMIT = 4;
+let sessionInterstitials = 0;
+let lastInterstitialAt = 0;
+let pendingInterstitial = false;
+
+function scheduleInterstitial(firstCompletion){
+  pendingInterstitial = !!firstCompletion && curN >= 3 && curN % 3 === 0;
+}
+function showInterstitial(next){
+  const finish = function(){ pendingInterstitial = false; next(); };
+  if (!pendingInterstitial || !window.vkBridge || adBusy || sessionInterstitials >= INTERSTITIAL_SESSION_LIMIT) {
+    finish();
+    return;
+  }
+  const now = Date.now();
+  if (lastInterstitialAt && now - lastInterstitialAt < INTERSTITIAL_COOLDOWN) {
+    trackEvent('interstitial_skip', { level:curN, reason:'cooldown' });
+    finish();
+    return;
+  }
+  adBusy = true;
+  const readyPromise = adReady.interstitial
+    ? Promise.resolve({ result:true })
+    : (trackEvent('interstitial_check', { level:curN, session_count:sessionInterstitials }), vkBridge.send('VKWebAppCheckNativeAds', { ad_format:'interstitial' }));
+  readyPromise
+    .then(function(r){
+      if (!r || !r.result) {
+        trackEvent('interstitial_unavailable', { level:curN });
+        return null;
+      }
+      adReady.interstitial = false;
+      trackEvent('interstitial_show', { level:curN });
+      return vkBridge.send('VKWebAppShowNativeAds', { ad_format:'interstitial' })
+        .then(function(res){
+          if (res && res.result) {
+            sessionInterstitials++;
+            lastInterstitialAt = Date.now();
+            trackEvent('interstitial_complete', { level:curN, session_count:sessionInterstitials });
+          } else {
+            trackEvent('interstitial_cancel', { level:curN });
+          }
+        });
+    })
+    .catch(function(error){
+      trackEvent('interstitial_error', { level:curN, code:error && error.error_type ? error.error_type : 'unknown' });
+    })
+    .finally(function(){
+      adBusy = false;
+      setTimeout(function(){ preloadAd('interstitial'); }, 5000);
+      finish();
+    });
 }
 
 function useHint(){
+  trackEvent('hint_request', { level:curN, moves:moves, hints_before:save.hints });
   if (save.hints <= 0) { showRewardAd(); return; }   // жетоны кончились -> реклама
   if (grantHint()) {                                  // подсказка выдана -> тратим жетон
     save.hints -= 1;
@@ -1125,8 +1502,35 @@ function useHint(){
 
 /* ---------- КНОПКИ ---------- */
 $('btn-play').addEventListener('click', function(){
+  trackEvent('play_click', { level:curN, saved_level:save.lv });
+  gameStarted = true;
+  if (save.lv <= LEVELS.length) trackLevelStart(currentLevelSource);
   audioStart();
   $('splash').classList.add('hidden');
+  setTimeout(preloadAds, 900);
+  if (!$('final-veil').classList.contains('on')) showFirstRunFlow();
+});
+$('btn-levels').addEventListener('click', function(){ openLevelMap('game'); });
+$('map-close').addEventListener('click', function(){ $('map-veil').classList.remove('on'); });
+$('intro-close').addEventListener('click', function(){
+  save.intro = 1;
+  if (!save.dd) { save.dd = todayStr(); save.ds = 0; }
+  persist();
+  $('intro-veil').classList.remove('on');
+  trackEvent('onboarding_complete', { level:curN });
+});
+$('daily-claim').addEventListener('click', function(){
+  if (!pendingDailyDay || save.dd === todayStr()) { $('daily-veil').classList.remove('on'); return; }
+  const reward = pendingDailyDay === 7 ? 2 : 1;
+  save.dd = todayStr();
+  save.ds = pendingDailyDay;
+  save.hints += reward;
+  persist();
+  updateHintBtn();
+  $('daily-veil').classList.remove('on');
+  trackEvent('daily_reward_claim', { day:pendingDailyDay, reward:reward, hints_after:save.hints });
+  toast(reward === 1 ? 'Получена подсказка' : 'Получено 2 подсказки');
+  pendingDailyDay = 0;
 });
 $('btn-settings').addEventListener('click', function(){
   $('set-vol').value = save.vol;
@@ -1169,11 +1573,29 @@ $('set-sfx').addEventListener('click', function(){
   persist();
   if (save.sfx) sfx('move');
 });
-$('btn-restart').addEventListener('click', function(){ openLevel(curN, false); });
+$('btn-restart').addEventListener('click', function(){
+  trackEvent('level_restart', { level:curN, moves:moves });
+  openLevel(curN, false, 'restart');
+});
 $('btn-undo').addEventListener('click', undo);
 $('btn-hint').addEventListener('click', useHint);
-$('win-replay').addEventListener('click', function(){ $('win-veil').classList.remove('on'); openLevel(curN, false); });
-$('win-next').addEventListener('click', function(){ $('win-veil').classList.remove('on'); openLevel(curN+1, true); });
+$('win-replay').addEventListener('click', function(){
+  $('win-veil').classList.remove('on');
+  openLevel(curN, false, 'replay');
+});
+$('win-next').addEventListener('click', function(){
+  $('win-veil').classList.remove('on');
+  showInterstitial(function(){ openLevel(curN+1, true, 'next'); });
+});
+$('final-map').addEventListener('click', function(){
+  $('final-veil').classList.remove('on');
+  openLevel(LEVELS.length, false, 'final_map_base');
+  openLevelMap('final');
+});
+$('final-replay').addEventListener('click', function(){
+  $('final-veil').classList.remove('on');
+  openLevel(LEVELS.length, false, 'final_replay');
+});
 
 let resizeT = null;
 window.addEventListener('resize', function(){
@@ -1184,13 +1606,19 @@ window.addEventListener('resize', function(){
 /* ---------- СТАРТ ---------- */
 loadSave(function(){
   applyVolume();
+  trackEvent('game_ready', {
+    saved_level:save.lv,
+    completed_levels:Math.min(save.lv - 1, 100),
+    total_stars:totalStars(),
+    save_schema:save.schema || 1
+  });
   if (save.lv > LEVELS.length) {
     setBackground(DISTRICTS.length-1, true);
-    openLevel(LEVELS.length, false);
+    openLevel(LEVELS.length, false, 'completed_game');
     showFinal();
   } else {
     setBackground(districtOf(save.lv), true);
-    openLevel(save.lv, false);
+    openLevel(save.lv, false, 'resume');
   }
 });
 
