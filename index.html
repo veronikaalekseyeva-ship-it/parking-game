@@ -347,6 +347,7 @@ body{overflow-y:auto;overflow-x:hidden}.sheet{max-height:92dvh;overflow-y:auto}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
 [hidden]{display:none!important}
+#win-city-picture{max-width:260px;margin:8px auto}#win-city-picture svg{display:block;width:100%;max-height:120px}
 </style>
 </head>
 <body>
@@ -436,6 +437,7 @@ body{overflow-y:auto;overflow-x:hidden}.sheet{max-height:92dvh;overflow-y:auto}
       <button class="btn" id="win-replay">Ещё раз</button>
       <button class="btn accent" id="win-next">Дальше</button>
     </div>
+    <div class="city-preview" id="win-city-picture" aria-label="Развитие города" hidden></div>
     <button class="btn win-city-button" id="win-city">Мой город</button>
   </div>
 </div>
@@ -465,7 +467,7 @@ body{overflow-y:auto;overflow-x:hidden}.sheet{max-height:92dvh;overflow-y:auto}
     <div class="city-task"><div class="city-task-title"><span>Пробка дня</span><span class="city-task-tag" id="city-task-tag">Новая задача</span></div><p id="city-task-copy"></p><button class="btn accent" id="city-daily-start">Решить пробку дня</button><button class="btn city-bonus" id="city-daily-bonus" hidden>Ещё 1 жетон за рекламу</button></div>
     <div class="city-collection" id="city-collection"></div>
     <button class="btn" id="city-campaign" style="width:100%">Продолжить уровни</button>
-    <p class="city-footnote">Открытые объекты и жетоны сохраняются, даже если пропустить день.</p>
+    <p class="city-footnote">Каждый впервые пройденный уровень после открытия сквера даёт 1 жетон. Ранее пройденные уровни уже учтены. Пробка дня даёт ещё 1 жетон, реклама после неё ещё 1. Повторы наград не дают. Пропуск дня не отнимает прогресс.</p>
   </section>
 </div>
 <div class="veil" id="daily-win-veil">
@@ -858,7 +860,7 @@ const DEBUG_ADS = new URLSearchParams(window.location.search).get('debug_ads') =
 /* Версия нужна для сравнения отчётов до и после обновления аналитики.
    Тип запуска определяется по сохранению игры, а не по дате установки VK.
    В MyTracker не передаём имя, VK ID, адрес страницы или другие данные аккаунта. */
-const ANALYTICS_BUILD = '20261007City1';
+const ANALYTICS_BUILD = '20261019City2';
 let analyticsSaveType = 'unknown';
 let analyticsVkHidden = false;
 let analyticsLevel = null;
@@ -1486,6 +1488,7 @@ function win(){
   sfx('win');
   if (gameMode === 'daily') {winDailyPuzzle();return;}
   const previousCityCount = cityUnlockedCount();
+  const previousCityTokens = cityTokens();
 
   const st = starsFor(curN, moves);
   const idx = curN - 1;
@@ -1515,6 +1518,8 @@ function win(){
     used_hint:usedHint ? 1 : 0,
     used_undo:usedUndo ? 1 : 0
   });
+  const earnedCityTokens = cityTokens() - previousCityTokens;
+  if (earnedCityTokens > 0) trackEvent('city_token_earned',{amount:earnedCityTokens,source:'campaign',level:curN,tokens:cityTokens()});
   scheduleInterstitial(firstCompletion);
   trackCityUnlocks(previousCityCount);
   renderCityEntry();
@@ -1534,7 +1539,9 @@ function win(){
     const list = PRAISE[st];
     $('win-title').textContent = list[(Math.random()*list.length)|0];
     $('win-sub').textContent = st === 3 ? 'Лучше некуда' : (st === 2 ? 'Совсем близко к идеалу' : 'Уровень пройден');
-    $('win-city-copy').textContent = campaignCityMessage();
+    $('win-city-copy').textContent = (earnedCityTokens > 0 ? '+1 жетон города. ' : '') + (cityUnlockedCount() > previousCityCount && completedLevelCount() > 3 ? 'Открыто: '+CITY_OBJECTS[cityUnlockedCount()-1].name+'. ' : '') + campaignCityMessage();
+    $('win-city-picture').hidden = cityUnlockedCount() <= previousCityCount;
+    $('win-city-picture').innerHTML = cityUnlockedCount() > previousCityCount ? cityIllustration('win') : '';
     $('win-next').textContent = curN < 3 ? 'К скверу: уровень '+(curN+1) : 'Следующий уровень';
     // звёзды прилетают по одной со звоном
     $('win-stars').innerHTML = starSVG(st>0,44) + starSVG(st>1,44) + starSVG(st>2,44);
@@ -1943,14 +1950,15 @@ window.addEventListener('resize', function(){
 
 /* ---------- ОЖИВИ ГОРОД ----------
    Первый сквер открывается за три обычных уровня. Дальше каждая пробка дня
-   даёт жетон. Просмотр рекламы добровольно даёт ещё один, один раз в день.
+   даёт жетон. Каждая новая победа после первых трёх тоже даёт жетон.
+   Просмотр рекламы после пробки дня добровольно даёт ещё один, один раз в день.
    Жетоны записаны по датам: повтор и перезапуск не начисляют их заново.
    При объединении устройств за одну дату берём максимум, а не сумму. */
 const CITY_OBJECTS = [
-  {name:'Сквер', icon:'🌳', cost:0}, {name:'Фонари', icon:'💡', cost:7},
-  {name:'Кафе', icon:'☕', cost:14}, {name:'Фонтан', icon:'⛲', cost:21},
-  {name:'Остановка', icon:'🚌', cost:28}, {name:'Цветники', icon:'🌷', cost:35},
-  {name:'Часы', icon:'🕰️', cost:42}, {name:'Огни города', icon:'✨', cost:49}
+  {name:'Сквер', icon:'🌳', cost:0}, {name:'Фонари', icon:'💡', cost:2},
+  {name:'Кафе', icon:'☕', cost:5}, {name:'Фонтан', icon:'⛲', cost:10},
+  {name:'Остановка', icon:'🚌', cost:18}, {name:'Цветники', icon:'🌷', cost:27},
+  {name:'Часы', icon:'🕰️', cost:37}, {name:'Огни города', icon:'✨', cost:49}
 ];
 const CITY_TOKEN_LIMIT = 49;
 let dailyRunDay = '', dailyReturnN = 1, dailyBoardComplete = false;
@@ -1979,9 +1987,12 @@ function mergeCityLedger(a,b){
   Object.keys(other).forEach(function(day){out[day] = Math.max(out[day] || 0, other[day]);});
   return writeCityLedger(out);
 }
+// Прогресс за кампанию вычисляется из уникальных побед.
+// Старые сохранения получают его автоматически, объединение устройств не дублирует награды.
+function campaignCityTokens(){return Math.max(0,completedLevelCount()-3);}
 function cityTokens(){
   const ledger = readCityLedger(save.cityLedger);
-  return Math.min(CITY_TOKEN_LIMIT, Object.keys(ledger).reduce(function(n,day){return n+ledger[day];},0));
+  return Math.min(CITY_TOKEN_LIMIT, campaignCityTokens() + Object.keys(ledger).reduce(function(n,day){return n+ledger[day];},0));
 }
 function cityOpen(){return completedLevelCount() >= 3;}
 function cityUnlockedCount(){
@@ -2067,7 +2078,7 @@ function renderCityEntry(){
   if (!cityOpen()) $('city-entry-sub').textContent = 'Пройдено '+goal.current+' из 3. Открой первый объект';
   else {
     ensureDailyForToday();
-    $('city-entry-sub').textContent = save.cityWon ? 'Сегодня пройдено. Новая пробка завтра' : 'Пробка дня: реши и получи жетон города';
+    $('city-entry-sub').textContent = cityTokens() >= CITY_TOKEN_LIMIT ? 'Все объекты открыты. Пробка дня ждёт тебя' : goal.current+' из '+goal.target+' жетонов. Новый уровень даёт +1';
   }
 }
 function renderCityHub(){
@@ -2176,9 +2187,9 @@ function campaignCityMessage(){
     const left = 3-completedLevelCount();
     return 'Ещё '+left+' '+(left === 1 ? 'уровень' : 'уровня')+', и откроется сквер';
   }
-  if (completedLevelCount() === 3) return 'Сквер открыт! В городе тебя ждёт пробка дня';
+  if (completedLevelCount() === 3) return 'Сквер открыт! Ещё 2 новых уровня, и зажгутся фонари';
   const goal = nextCityGoal();
-  return goal.name+' · '+goal.current+' из '+goal.target+' жетонов';
+  return cityTokens() >= CITY_TOKEN_LIMIT ? 'Все объекты города открыты!' : goal.name+' · '+goal.current+' из '+goal.target+' жетонов. Новый уровень даёт +1';
 }
 $('city-entry').addEventListener('click',function(){openCityHub('game');});
 $('city-close').addEventListener('click',function(){if(!adBusy)$('city-veil').classList.remove('on');});
